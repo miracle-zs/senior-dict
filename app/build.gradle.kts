@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "com.seniordict.app"
     compileSdk = 35
+    ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.seniordict.app"
@@ -56,6 +57,10 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        jniLibs {
+            useLegacyPackaging = true
+            pickFirsts += "**/libc++_shared.so"
+        }
     }
     lint {
         checkReleaseBuilds = false
@@ -91,8 +96,6 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
 
-    // ONNX Runtime Android
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")

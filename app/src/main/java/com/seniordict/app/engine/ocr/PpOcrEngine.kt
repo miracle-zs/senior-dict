@@ -29,11 +29,11 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
     private var reusableBuffer: ByteBuffer? = null
 
     init {
-        // Asynchronously initialize and warm up model on IO thread
+        // Pre-warm OCR engine in background after a gentle delay to allow smooth UI launch
         Thread {
             try {
+                Thread.sleep(1500)
                 ensureInitialized()
-                warmUp()
             } catch (t: Throwable) {
                 Log.e("PpOcrEngine", "Failed to initialize native OCR engine", t)
             }
@@ -185,7 +185,7 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
 
         val detModel = materializeAsset("models/PP-OCRv6_medium_det.mnn")
         val recModel = materializeAsset("models/PP-OCRv6_medium_rec.onnx")
-        val clsModel = ""
+        val clsModel = detModel.absolutePath // direction classify disabled; pass valid file to prevent NULL pointer dereference
         val config = materializeAsset("config_v6.txt")
         val dictionary = materializeAsset("labels/ppocr_keys_v6.txt")
 
@@ -195,8 +195,8 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
             recModelPath = recModel.absolutePath,
             configPath = config.absolutePath,
             dictPath = dictionary.absolutePath,
-            cpuThreadNum = 4,
-            cpuPowerMode = "LITE_POWER_HIGH"
+            cpuThreadNum = 2,
+            cpuPowerMode = ""
         )
         if (nativeHandle != 0L) {
             isInitialized.set(true)
