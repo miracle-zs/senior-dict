@@ -73,14 +73,14 @@ fun SplitCharDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "偏旁 / 拆字查生字",
-                        style = MaterialTheme.typography.titleLarge
+                        text = "偏旁拆字",
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     )
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(26.dp))
                     }
                 }
 
@@ -95,29 +95,29 @@ fun SplitCharDialog(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(68.dp),
+                        .height(64.dp),
                     placeholder = {
                         Text(
-                            text = "例如：左边木右边白，或草字头加约",
+                            text = "输入部件，如：木 白 或 左边木右边白",
                             style = MaterialTheme.typography.bodyLarge.copy(color = SeniorTextMuted)
                         )
                     },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 22.sp),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
                     shape = RoundedCornerShape(16.dp),
                     trailingIcon = {
                         IconButton(onClick = { onQuery(inputText) }) {
-                            Icon(Icons.Default.Search, contentDescription = "搜索", modifier = Modifier.size(32.dp))
+                            Icon(Icons.Default.Search, contentDescription = "搜索", modifier = Modifier.size(28.dp))
                         }
                     },
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Quick Radical Helper Chips
                 Text(
-                    text = "快捷偏旁（点击直接填入）：",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                    text = "常用偏旁",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -134,8 +134,8 @@ fun SplitCharDialog(
                             },
                             label = {
                                 Text(
-                                    text = "$char ($label)",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp)
+                                    text = "$char $label",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)
                                 )
                             },
                             shape = RoundedCornerShape(12.dp)
@@ -143,15 +143,15 @@ fun SplitCharDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Results Header
                 Text(
-                    text = if (candidates.isEmpty()) "候选生字（输入部件即可快速反查）：" else "查到的生字（点击可看大字和读音）：",
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
+                    text = if (candidates.isEmpty()) "拆字结果" else "查到的汉字 (共${candidates.size}个)",
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Candidates Grid (Large Tiles)
                 if (candidates.isEmpty()) {
@@ -162,7 +162,7 @@ fun SplitCharDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (inputText.isNotBlank()) "未找到对应拆分的汉字\n可尝试简化输入，例如只输入两个偏旁" else "在上方输入偏旁或描述\n例如输入：木 白",
+                            text = if (inputText.isNotBlank()) "未找到对应拆分的汉字\n可尝试简化输入，例如只输入两个偏旁" else "在此输入偏旁部件组合查字\n例如输入：木 白 可查出“柏”",
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center,
                             color = SeniorTextMuted

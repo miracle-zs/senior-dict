@@ -246,9 +246,20 @@ fun MainScreen(viewModel: MainViewModel) {
 
     // Modal Word Detail Sheet
     if (uiState.isDetailSheetVisible && uiState.selectedEntity != null) {
+        val contextChars = remember(uiState.ocrResult, uiState.selectedEntity) {
+            val fromOcr = uiState.ocrResult?.characters?.map { it.char }?.distinct() ?: emptyList()
+            if (fromOcr.isNotEmpty() && uiState.selectedEntity?.char in fromOcr) {
+                fromOcr
+            } else {
+                emptyList()
+            }
+        }
+
         WordDetailSheet(
             character = uiState.selectedEntity!!,
             isFavorite = uiState.isSelectedCharFavorite,
+            contextCharacters = contextChars,
+            onSelectCharacter = { charStr -> viewModel.selectScannedCharacter(charStr) },
             onDismiss = { viewModel.dismissDetailSheet() },
             onSpeak = { viewModel.speakCurrentCharacter() },
             onSpeakWord = { word -> viewModel.speakWord(word) },

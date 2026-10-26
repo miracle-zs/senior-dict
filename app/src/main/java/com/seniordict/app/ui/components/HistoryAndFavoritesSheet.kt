@@ -9,10 +9,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,18 +70,18 @@ fun HistoryAndFavoritesSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "温习生字",
+                    text = "生字本与历史",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 26.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = SeniorDark
                     )
                 )
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(26.dp))
                 }
             }
 
@@ -99,7 +99,7 @@ fun HistoryAndFavoritesSheet(
                     onClick = { selectedTab = 0 },
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .height(50.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (selectedTab == 0) SeniorPrimary else Color.Transparent,
@@ -110,13 +110,13 @@ fun HistoryAndFavoritesSheet(
                     Icon(
                         Icons.Default.Star,
                         contentDescription = "生字本",
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(18.dp),
                         tint = if (selectedTab == 0) Color.White else SeniorPrimary
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "我的生字本 (${favorites.size})",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp)
+                        text = "生字本 (${favorites.size})",
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     )
                 }
 
@@ -125,7 +125,7 @@ fun HistoryAndFavoritesSheet(
                     onClick = { selectedTab = 1 },
                     modifier = Modifier
                         .weight(1f)
-                        .height(52.dp),
+                        .height(50.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (selectedTab == 1) SeniorPrimary else Color.Transparent,
@@ -135,12 +135,12 @@ fun HistoryAndFavoritesSheet(
                 ) {
                     Text(
                         text = "查字历史 (${history.size})",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp)
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Tab Content
             if (selectedTab == 0) {
@@ -153,10 +153,10 @@ fun HistoryAndFavoritesSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "⭐️ 生字本还是空的\n在查字卡片上点击【存入生字本】\n就能随时在这里复习啦！",
+                            text = "暂无收藏的生字\n查字时点击【收藏】即可存入生字本",
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 color = SeniorTextMuted,
-                                fontSize = 18.sp,
+                                fontSize = 17.sp,
                                 lineHeight = 26.sp
                             ),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -193,10 +193,10 @@ fun HistoryAndFavoritesSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "🕒 暂无查字历史\n拍照识字或拆字反查后\n会自动记录在这里方便回看",
+                            text = "暂无查字历史\n查过的汉字会自动记录在此",
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 color = SeniorTextMuted,
-                                fontSize = 18.sp,
+                                fontSize = 17.sp,
                                 lineHeight = 26.sp
                             ),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -364,7 +364,7 @@ fun CharacterListItemCard(
                     .background(SeniorSuccess.copy(alpha = 0.15f))
             ) {
                 Icon(
-                    Icons.Default.VolumeUp,
+                    imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                     contentDescription = "朗读发音",
                     tint = SeniorSuccess,
                     modifier = Modifier.size(26.dp)

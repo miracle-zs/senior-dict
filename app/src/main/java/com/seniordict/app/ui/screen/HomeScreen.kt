@@ -39,8 +39,8 @@ import com.seniordict.app.ui.viewmodel.MainViewModel
 import java.util.Calendar
 
 /**
- * 经典辞书 · 典雅书房首页 (HomeScreen)
- * 养生雅致翠竹青调，大字高对比，温润防眩光。
+ * 银发字典 · 首页 (HomeScreen)
+ * 纯粹自然，大字高对比，温润防眩光。
  * 启动时完全不打开摄像头，护眼省电无打扰。
  */
 @Composable
@@ -56,10 +56,10 @@ fun HomeScreen(
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         when (hour) {
-            in 5..11 -> "早上好，长辈"
-            in 12..13 -> "中午好，长辈"
-            in 14..18 -> "下午好，长辈"
-            else -> "晚上好，长辈"
+            in 5..11 -> "早上好"
+            in 12..13 -> "中午好"
+            in 14..18 -> "下午好"
+            else -> "晚上好"
         }
     }
 
@@ -74,7 +74,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -83,10 +83,9 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Classical Seal "字" Badge
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(38.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(JadePrimaryDark),
                             contentAlignment = Alignment.Center
@@ -94,7 +93,7 @@ fun HomeScreen(
                             Text(
                                 text = "字",
                                 color = WarmAmber,
-                                fontSize = 24.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontFamily = FontFamily.Serif
                             )
@@ -104,7 +103,7 @@ fun HomeScreen(
                             Text(
                                 text = "银发字典",
                                 style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 24.sp,
+                                    fontSize = 23.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = JadeDeep
                                 )
@@ -120,50 +119,17 @@ fun HomeScreen(
                         }
                     }
 
-                    // Settings & Help Actions
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Settings Button
+                    IconButton(
+                        onClick = { viewModel.openSettingsDialog() },
+                        modifier = Modifier.size(44.dp)
                     ) {
-                        // Sound volume assurance indicator
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = JadeContainer,
-                            modifier = Modifier.clickable {
-                                viewModel.speakWord("大音量发音正常")
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                                    contentDescription = "大音量",
-                                    tint = JadePrimaryDark,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "大音量",
-                                    color = JadeDeep,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = { viewModel.openSettingsDialog() },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "设置",
-                                tint = JadeDeep,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "设置",
+                            tint = JadeDeep,
+                            modifier = Modifier.size(26.dp)
+                        )
                     }
                 }
             }
@@ -181,20 +147,20 @@ fun HomeScreen(
                 Surface(
                     shape = RoundedCornerShape(18.dp),
                     color = SeniorSurface,
-                    shadowElevation = 3.dp,
+                    shadowElevation = 2.dp,
                     border = androidx.compose.foundation.BorderStroke(1.dp, JadeLight)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "搜索",
                             tint = JadePrimary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         TextField(
@@ -202,7 +168,7 @@ fun HomeScreen(
                             onValueChange = { viewModel.onSearchQueryChanged(it) },
                             placeholder = {
                                 Text(
-                                    text = "输入汉字或拼音 (如：福、fu)",
+                                    text = "输入汉字或拼音查字",
                                     fontSize = 17.sp,
                                     color = SeniorTextMuted
                                 )
@@ -250,12 +216,12 @@ fun HomeScreen(
                 }
             }
 
-            // 2. 核心主英雄位：拍照查字 (全宽尊老黄金卡片)
+            // 2. 核心主入口：拍照看字
             item {
                 Surface(
                     shape = RoundedCornerShape(22.dp),
                     color = Color.Transparent,
-                    shadowElevation = 6.dp,
+                    shadowElevation = 5.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onOpenCamera() }
@@ -281,64 +247,24 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                // 推荐标签
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = WarmAmberLight
-                                ) {
-                                    Text(
-                                        text = "★ 适老专属 · 一拍即查",
-                                        color = WarmAmber,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "拍照看字",
                                     fontSize = 25.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "看药盒、说明书、报纸说明，指哪读哪",
+                                    text = "对准包装、药盒或书报拍照点读",
                                     fontSize = 15.sp,
                                     color = JadeLight,
                                     lineHeight = 20.sp
                                 )
-                                Spacer(modifier = Modifier.height(14.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = WarmAmber,
-                                    shadowElevation = 2.dp
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "开启大字相机",
-                                            color = Color.White,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                            contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
                             }
 
-                            // Camera Decorative Icon
                             Box(
                                 modifier = Modifier
-                                    .size(76.dp)
+                                    .size(66.dp)
                                     .clip(CircleShape)
                                     .background(Color(0x33FFFFFF))
                                     .border(2.dp, WarmAmber, CircleShape),
@@ -348,7 +274,7 @@ fun HomeScreen(
                                     imageVector = Icons.Default.CameraAlt,
                                     contentDescription = "拍照",
                                     tint = WarmAmberLight,
-                                    modifier = Modifier.size(42.dp)
+                                    modifier = Modifier.size(36.dp)
                                 )
                             }
                         }
@@ -356,7 +282,7 @@ fun HomeScreen(
                 }
             }
 
-            // 3. 另外两大查字法：田字格手写 + 偏旁拆字
+            // 3. 另外两大查字法：手写查字 + 偏旁拆字
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -366,7 +292,7 @@ fun HomeScreen(
                     Surface(
                         shape = RoundedCornerShape(18.dp),
                         color = SeniorSurface,
-                        shadowElevation = 3.dp,
+                        shadowElevation = 2.dp,
                         border = androidx.compose.foundation.BorderStroke(1.dp, JadeLight),
                         modifier = Modifier
                             .weight(1f)
@@ -378,7 +304,7 @@ fun HomeScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(46.dp)
+                                    .size(44.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(JadeContainer),
                                 contentAlignment = Alignment.Center
@@ -387,18 +313,18 @@ fun HomeScreen(
                                     imageVector = Icons.Default.Create,
                                     contentDescription = "手写",
                                     tint = JadePrimaryDark,
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "田字格手写",
+                                text = "手写查字",
                                 fontSize = 19.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SeniorDark
                             )
                             Text(
-                                text = "大格书写 · 拼音提示",
+                                text = "屏幕手写，随写随认",
                                 fontSize = 13.sp,
                                 color = SeniorTextMuted
                             )
@@ -409,7 +335,7 @@ fun HomeScreen(
                     Surface(
                         shape = RoundedCornerShape(18.dp),
                         color = SeniorSurface,
-                        shadowElevation = 3.dp,
+                        shadowElevation = 2.dp,
                         border = androidx.compose.foundation.BorderStroke(1.dp, WarmAmberLight),
                         modifier = Modifier
                             .weight(1f)
@@ -421,7 +347,7 @@ fun HomeScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(46.dp)
+                                    .size(44.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(WarmAmberLight),
                                 contentAlignment = Alignment.Center
@@ -430,10 +356,10 @@ fun HomeScreen(
                                     imageVector = Icons.Default.Extension,
                                     contentDescription = "拆字",
                                     tint = WarmAmber,
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "偏旁拆字",
                                 fontSize = 19.sp,
@@ -441,7 +367,7 @@ fun HomeScreen(
                                 color = SeniorDark
                             )
                             Text(
-                                text = "如：左边木右边白",
+                                text = "按部件组合反查",
                                 fontSize = 13.sp,
                                 color = SeniorTextMuted
                             )
@@ -474,7 +400,7 @@ fun HomeScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(46.dp)
+                                    .size(44.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(WarmAmberLight),
                                 contentAlignment = Alignment.Center
@@ -483,7 +409,7 @@ fun HomeScreen(
                                     imageVector = Icons.Default.Star,
                                     contentDescription = "生字本",
                                     tint = WarmAmber,
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                             Column {
@@ -494,7 +420,7 @@ fun HomeScreen(
                                     color = SeniorDark
                                 )
                                 Text(
-                                    text = if (favorites.isEmpty()) "点击红心收藏重点字，随时查阅温习" else "已收藏 ${favorites.size} 个生字，点击进入温习",
+                                    text = if (favorites.isEmpty()) "收藏难记生字，随时复习" else "已收藏 ${favorites.size} 个生字",
                                     fontSize = 14.sp,
                                     color = SeniorTextMuted
                                 )
@@ -587,21 +513,21 @@ fun HomeScreen(
                 }
             }
 
-            // 7. 贴心助老底纹文案
+            // 7. 纯离线隐私提示底纹
             item {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "🌿 银发字典 · 字字清晰 · 纯离线保护长辈隐私",
+                        text = "纯离线词典 · 零网络消耗 · 隐私保护",
                         fontSize = 13.sp,
-                        color = SeniorTextMuted,
+                        color = SeniorTextMuted.copy(alpha = 0.8f),
                         textAlign = TextAlign.Center
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -619,7 +545,7 @@ private fun DailyWordCard(
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = SeniorSurface,
-        shadowElevation = 4.dp,
+        shadowElevation = 3.dp,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, CinnabarRed.copy(alpha = 0.35f)),
         modifier = Modifier
             .fillMaxWidth()
@@ -672,10 +598,8 @@ private fun DailyWordCard(
                             val w = size.width
                             val h = size.height
                             val strokeColor = CinnabarRed.copy(alpha = 0.25f)
-                            // Cross lines
                             drawLine(strokeColor, Offset(w / 2f, 0f), Offset(w / 2f, h), 1.5f)
                             drawLine(strokeColor, Offset(0f, h / 2f), Offset(w, h / 2f), 1.5f)
-                            // Diagonal dotted hints
                             drawLine(strokeColor, Offset(0f, 0f), Offset(w, h), 1f)
                             drawLine(strokeColor, Offset(w, 0f), Offset(0f, h), 1f)
                         },
@@ -706,7 +630,6 @@ private fun DailyWordCard(
                             color = JadeDeep
                         )
 
-                        // Big Speaker Button
                         Button(
                             onClick = onSpeakWord,
                             shape = RoundedCornerShape(20.dp),
@@ -736,20 +659,6 @@ private fun DailyWordCard(
                         lineHeight = 21.sp
                     )
                 }
-            }
-
-            // Footer hint
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "点击查看笔顺、部首与完整大白话组词 →",
-                    fontSize = 13.sp,
-                    color = JadePrimaryDark,
-                    fontWeight = FontWeight.Medium
-                )
             }
         }
     }

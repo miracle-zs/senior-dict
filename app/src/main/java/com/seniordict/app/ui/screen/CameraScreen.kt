@@ -120,7 +120,7 @@ fun CameraScreen(
                                 shadowElevation = 6.dp
                             ) {
                                 Text(
-                                    text = "👆 轻点画面黄框，或点下方大字听发音",
+                                    text = "轻点文字即可听发音",
                                     color = Color.White,
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontSize = 17.sp,
@@ -140,7 +140,7 @@ fun CameraScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = "🧐 没看清画面里的字",
+                                        text = "未识别到文字",
                                         color = SeniorDark,
                                         style = MaterialTheme.typography.titleMedium.copy(
                                             fontSize = 19.sp,
@@ -149,7 +149,7 @@ fun CameraScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "请将镜头靠近一点，或在下方开灯后再拍一次",
+                                        text = "请靠近一点，或开启上方补光灯再拍一次",
                                         color = SeniorTextMuted,
                                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
                                         textAlign = TextAlign.Center
@@ -205,7 +205,7 @@ fun CameraScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "返回书房",
+                            text = "返回",
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -215,7 +215,7 @@ fun CameraScreen(
 
                 // 标题
                 Text(
-                    text = if (uiState.isFrozen) "点选查字" else "拍照对准汉字",
+                    text = if (uiState.isFrozen) "点选文字" else "拍照查字",
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
@@ -267,22 +267,14 @@ fun CameraScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "📖 识别到的汉字",
-                                        color = Color.White,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "点大字直接听解释",
-                                        color = Color(0xFFCBD5E1),
-                                        fontSize = 13.sp
-                                    )
-                                }
                                 Text(
-                                    text = "共${characters.size}字",
+                                    text = "已识别汉字",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "共${characters.size}字 · 点字听读音",
                                     color = Color(0xFFF59E0B),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold

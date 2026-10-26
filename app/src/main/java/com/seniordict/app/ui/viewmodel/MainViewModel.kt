@@ -344,6 +344,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
+    fun selectScannedCharacter(charStr: String) {
+        val ocrChar = _uiState.value.ocrResult?.characters?.find { it.char == charStr }
+        if (ocrChar != null) {
+            onCharacterTapped(ocrChar)
+        } else {
+            onDirectLookup(charStr, source = "CONTEXT_SWITCH")
+        }
+    }
+
     fun submitSearch(query: String) {
         val q = query.trim()
         if (q.isEmpty()) return
@@ -353,6 +362,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 onDirectLookup(entity.char, source = "SEARCH")
                 return@launch
             }
+
+            // If user entered multiple Chinese characters (e.g. "中药" or "幸福")
+            val chineseChars = q.filter { (it in '\u4e00'..'\u9fa5') || (it in '\u3400'..'\u4dbf') }.map { it.toString() }
+            if (chineseChars.isNotEmpty()) {
+                val firstChar = chineseChars.first()
+                val firstEntity = repository.lookupCharacter(firstChar)
+                if (firstEntity != null) {
+                    onDirectLookup(firstChar, source = "SEARCH")
+                    return@launch
+                }
+            }
+
             val pinyinMatches = repository.searchByPinyin(q)
             if (pinyinMatches.isNotEmpty()) {
                 onDirectLookup(pinyinMatches.first().char, source = "SEARCH")

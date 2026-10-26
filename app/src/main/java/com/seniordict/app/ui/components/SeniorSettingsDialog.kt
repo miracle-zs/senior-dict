@@ -58,38 +58,38 @@ fun SeniorSettingsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "长辈设置",
+                        text = "设置",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 26.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = SeniorDark
                         )
                     )
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(26.dp))
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Item 1: Speech Rate
                 Text(
                     text = "朗读语速",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 20.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = SeniorDark
                     )
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "根据听力习惯选择适合的发音速度",
+                    text = "调节发音语速快慢",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = SeniorTextMuted,
-                        fontSize = 15.sp
+                        fontSize = 14.sp
                     )
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -99,9 +99,9 @@ fun SeniorSettingsDialog(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val rates = listOf(
-                        Triple("极慢 0.6x", SeniorPreferences.RATE_VERY_SLOW, "高龄"),
+                        Triple("极慢 0.6x", SeniorPreferences.RATE_VERY_SLOW, "慢速"),
                         Triple("适中 0.8x", SeniorPreferences.RATE_MODERATE, "推荐"),
-                        Triple("标准 1.0x", SeniorPreferences.RATE_NORMAL, "正常")
+                        Triple("标准 1.0x", SeniorPreferences.RATE_NORMAL, "常速")
                     )
 
                     for ((label, rate, sub) in rates) {
@@ -109,10 +109,10 @@ fun SeniorSettingsDialog(
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(68.dp)
+                                .height(64.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .border(
-                                    width = if (isSelected) 3.dp else 1.5.dp,
+                                    width = if (isSelected) 2.5.dp else 1.dp,
                                     color = if (isSelected) SeniorPrimary else SeniorBorder,
                                     shape = RoundedCornerShape(16.dp)
                                 )
@@ -127,7 +127,7 @@ fun SeniorSettingsDialog(
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontSize = 17.sp,
+                                        fontSize = 16.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isSelected) SeniorPrimary else SeniorDark
                                     )
@@ -144,7 +144,7 @@ fun SeniorSettingsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Item 2: Mnemonic Word Switch
                 Row(
@@ -160,17 +160,17 @@ fun SeniorSettingsDialog(
                         Text(
                             text = "朗读带生活组词",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 19.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SeniorDark
                             )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "例如读出：“柏，柏树的柏”",
+                            text = "例如读出：“福，幸福的福”",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = SeniorTextMuted,
-                                fontSize = 15.sp
+                                fontSize = 14.sp
                             )
                         )
                     }
@@ -185,7 +185,7 @@ fun SeniorSettingsDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Item 3: Haptic Feedback Switch
                 Row(
@@ -199,19 +199,19 @@ fun SeniorSettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "点字震动提示",
+                            text = "触控震动提示",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 19.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SeniorDark
                             )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "手指点到字时手机轻微震动",
+                            text = "点选文字时轻触震动",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = SeniorTextMuted,
-                                fontSize = 15.sp
+                                fontSize = 14.sp
                             )
                         )
                     }
@@ -226,26 +226,26 @@ fun SeniorSettingsDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Section: App info & Commitment
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SeniorBorder.copy(alpha = 0.4f))
+                    colors = CardDefaults.cardColors(containerColor = SeniorBorder.copy(alpha = 0.35f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Text(
-                            text = "🔒 纯净适老承诺",
+                            text = "说明",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 color = SeniorDark
                             )
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "• 100% 离线可用：不消耗流量，无网络也能查\n• 零广告零弹窗：专为长辈长久安心使用打造\n• 权威字库：内置 1.48 万规范汉字与大白话解释",
+                            text = "• 纯离线词典：无需联网，零流量消耗\n• 纯净无广告：界面简洁，长辈省心\n• 权威字库：内置 1.48 万规范汉字与释义",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 14.sp,
                                 color = SeniorDark.copy(alpha = 0.8f),
@@ -255,20 +255,20 @@ fun SeniorSettingsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // Done Button
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SeniorPrimary)
                 ) {
                     Text(
-                        text = "完成设置",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 20.sp)
+                        text = "确定",
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold)
                     )
                 }
             }

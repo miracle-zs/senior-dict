@@ -157,10 +157,10 @@ fun FramingReticleBox(
             color = Color(0xAA0F172A)
         ) {
             Text(
-                text = "把不认识的字放在金角框内拍照",
+                text = "将文字对准金角框内拍摄",
                 color = Color(0xFFF8FAFC),
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 17.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)

@@ -41,6 +41,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.seniordict.app.data.db.CharacterEntity
 import com.seniordict.app.ui.theme.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,10 +53,31 @@ fun HandwritingCanvasDialog(
     val coroutineScope = rememberCoroutineScope()
     val paths = remember { mutableStateListOf<Path>() }
     var drawTick by remember { mutableLongStateOf(0L) }
+    var lastStrokeTime by remember { mutableLongStateOf(0L) }
 
     var candidates by remember { mutableStateOf<List<CharacterEntity>>(emptyList()) }
     var isRecognizing by remember { mutableStateOf(false) }
     var hasRecognizedOnce by remember { mutableStateOf(false) }
+
+    // Automatic debounce recognition: triggers 700ms after user finishes a stroke
+    LaunchedEffect(lastStrokeTime) {
+        if (lastStrokeTime > 0L && paths.isNotEmpty()) {
+            delay(700)
+            if (!isRecognizing && paths.isNotEmpty()) {
+                isRecognizing = true
+                hasRecognizedOnce = true
+                val bmp = rasterizeCanvas(paths)
+                try {
+                    candidates = onRecognize(bmp)
+                } finally {
+                    isRecognizing = false
+                    if (!bmp.isRecycled) {
+                        bmp.recycle()
+                    }
+                }
+            }
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -80,31 +102,22 @@ fun HandwritingCanvasDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "田字格大字手写",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JadeDeep
-                            )
+                    Text(
+                        text = "手写查字",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JadeDeep
                         )
-                        Text(
-                            text = "一笔一划写大字·随写随查",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 13.sp,
-                                color = SeniorTextMuted
-                            )
-                        )
-                    }
+                    )
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "关闭",
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(26.dp),
                             tint = SeniorDark
                         )
                     }
@@ -126,7 +139,6 @@ fun HandwritingCanvasDialog(
                                 down.consume()
                                 val path = Path().apply {
                                     moveTo(down.position.x, down.position.y)
-                                    // Tiny line so a pure touch tap renders as a round dot
                                     lineTo(down.position.x + 0.5f, down.position.y + 0.5f)
                                 }
                                 paths.add(path)
@@ -137,6 +149,7 @@ fun HandwritingCanvasDialog(
                                     val event = awaitPointerEvent()
                                     val change = event.changes.firstOrNull { it.id == pointerId } ?: break
                                     if (!change.pressed) {
+                                        lastStrokeTime = System.currentTimeMillis()
                                         break
                                     }
                                     change.consume()
@@ -189,7 +202,6 @@ fun HandwritingCanvasDialog(
 
                     // User Stroke Rendering
                     Canvas(modifier = Modifier.fillMaxSize()) {
-                        // Observing drawTick schedules canvas repaint on every touch drag event
                         if (drawTick >= 0) {
                             for (p in paths) {
                                 drawPath(
@@ -207,13 +219,12 @@ fun HandwritingCanvasDialog(
 
                     if (paths.isEmpty()) {
                         Text(
-                            text = "请在此用手指写字\n字迹尽量写大、居中",
+                            text = "在此手写汉字",
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 color = SeniorTextMuted.copy(alpha = 0.8f),
-                                fontSize = 21.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Medium,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                lineHeight = 32.sp
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             ),
                             modifier = Modifier.align(Alignment.Center)
                         )
@@ -226,14 +237,14 @@ fun HandwritingCanvasDialog(
                 if (candidates.isNotEmpty()) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "👆 请轻点您要查的字：",
+                            text = "候选字",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 18.sp,
+                                fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = JadePrimary
                             )
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -241,10 +252,10 @@ fun HandwritingCanvasDialog(
                             items(candidates) { entity ->
                                 Surface(
                                     modifier = Modifier
-                                        .width(76.dp)
-                                        .height(86.dp)
+                                        .width(74.dp)
+                                        .height(84.dp)
                                         .clip(RoundedCornerShape(14.dp))
-                                        .border(2.5.dp, JadePrimary, RoundedCornerShape(14.dp))
+                                        .border(2.dp, JadePrimary, RoundedCornerShape(14.dp))
                                         .clickable {
                                             onSelectChar(entity)
                                         },
@@ -258,7 +269,7 @@ fun HandwritingCanvasDialog(
                                         verticalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            text = entity.pinyin.ifEmpty { "拼音" },
+                                            text = entity.pinyin.ifEmpty { " " },
                                             style = MaterialTheme.typography.labelMedium.copy(
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -283,10 +294,10 @@ fun HandwritingCanvasDialog(
                     Spacer(modifier = Modifier.height(12.dp))
                 } else if (hasRecognizedOnce && !isRecognizing) {
                     Text(
-                        text = "未能清晰辨识，请尝试把字写大、写清楚一点再试哦",
+                        text = "未识别到汉字，请写大一些重试",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = WarmAmber,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
                         modifier = Modifier.padding(vertical = 4.dp)
@@ -308,24 +319,27 @@ fun HandwritingCanvasDialog(
                                 drawTick++
                                 candidates = emptyList()
                                 hasRecognizedOnce = false
+                                if (paths.isNotEmpty()) {
+                                    lastStrokeTime = System.currentTimeMillis()
+                                }
                             }
                         },
                         enabled = paths.isNotEmpty() && !isRecognizing,
                         modifier = Modifier
                             .weight(0.9f)
-                            .height(58.dp),
+                            .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(2.dp, if (paths.isNotEmpty()) SeniorBorder else SeniorBorder.copy(alpha = 0.5f))
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = "撤销一笔",
-                            modifier = Modifier.size(22.dp)
+                            contentDescription = "撤销",
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "撤销",
-                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         )
                     }
 
@@ -336,23 +350,24 @@ fun HandwritingCanvasDialog(
                             drawTick++
                             candidates = emptyList()
                             hasRecognizedOnce = false
+                            lastStrokeTime = 0L
                         },
                         enabled = paths.isNotEmpty() && !isRecognizing,
                         modifier = Modifier
                             .weight(0.9f)
-                            .height(58.dp),
+                            .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(2.dp, if (paths.isNotEmpty()) SeniorBorder else SeniorBorder.copy(alpha = 0.5f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "重写",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "重写",
-                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         )
                     }
 
@@ -365,8 +380,7 @@ fun HandwritingCanvasDialog(
                             val bmp = rasterizeCanvas(paths)
                             coroutineScope.launch {
                                 try {
-                                    val result = onRecognize(bmp)
-                                    candidates = result
+                                    candidates = onRecognize(bmp)
                                 } finally {
                                     isRecognizing = false
                                     if (!bmp.isRecycled) {
@@ -377,8 +391,8 @@ fun HandwritingCanvasDialog(
                         },
                         enabled = paths.isNotEmpty() && !isRecognizing,
                         modifier = Modifier
-                            .weight(1.5f)
-                            .height(58.dp),
+                            .weight(1.4f)
+                            .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = JadePrimary,
                             disabledContainerColor = JadePrimary.copy(alpha = 0.35f)
@@ -387,25 +401,25 @@ fun HandwritingCanvasDialog(
                     ) {
                         if (isRecognizing) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(22.dp),
                                 color = androidx.compose.ui.graphics.Color.White,
                                 strokeWidth = 3.dp
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "识别中...",
-                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "识别查字",
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "识别查字",
-                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
                             )
                         }
                     }
