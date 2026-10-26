@@ -15,53 +15,53 @@
         android:fillColor="#FFFFFF"
         android:pathData="M 35,23 L 73,23 C 78,23 82,27 82,32 L 82,78 C 82,83 78,87 73,87 L 35,87 C 30,87 26,83 26,78 L 26,32 C 26,27 30,23 35,23 Z" />
 
-    <!-- 3. Golden Hardcover Spine (Left binding stripe #F59E0B) -->
+    <!-- 3. Jade Hardcover Spine (Left binding stripe #042F2E) -->
     <path
-        android:fillColor="#F59E0B"
+        android:fillColor="#042F2E"
         android:pathData="M 35,23 L 38,23 L 38,87 L 35,87 C 30,87 26,83 26,78 L 26,32 C 26,27 30,23 35,23 Z" />
 
-    <!-- Spine classical gold ribs -->
+    <!-- Spine classical gold ribs (#F59E0B) -->
     <path
-        android:strokeColor="#D97706"
+        android:strokeColor="#F59E0B"
         android:strokeWidth="1.5"
         android:strokeLineCap="round"
         android:pathData="M 27,35 L 37,35 M 27,55 L 37,55 M 27,75 L 37,75" />
 
-    <!-- 4. Classical Cinnabar Red Bookmark Ribbon (Bottom) -->
+    <!-- 4. Classical Warm Amber Bookmark Ribbon (Bottom #F59E0B) -->
     <path
-        android:fillColor="#DC2626"
+        android:fillColor="#F59E0B"
         android:pathData="M 60,82 L 60,92 L 64,89 L 68,92 L 68,82 Z" />
 
-    <!-- 5. Inner Tianzige Calligraphy Framing (Gold Watermark) -->
+    <!-- 5. Inner Tianzige Calligraphy Framing (Jade Watermark #0F766E) -->
     <path
-        android:strokeColor="#F59E0B"
+        android:strokeColor="#0F766E"
         android:strokeWidth="1.2"
-        android:strokeAlpha="0.4"
+        android:strokeAlpha="0.35"
         android:pathData="M 40,30 L 76,30 L 76,76 L 40,76 Z" />
 
     <!-- Tianzige dashed crosshair guidelines -->
     <path
-        android:strokeColor="#F59E0B"
+        android:strokeColor="#0F766E"
         android:strokeWidth="0.8"
-        android:strokeAlpha="0.3"
+        android:strokeAlpha="0.25"
         android:pathData="M 58,30 L 58,76 M 40,53 L 76,53" />
 
-    <!-- 6. Bold Chinese Character '字' (Cinnabar Red #B91C1C) -->
+    <!-- 6. Bold Chinese Character '字' (Deep Pine Jade #042F2E) -->
     <!-- 宀 (宝盖头) Top Dot -->
     <path
-        android:fillColor="#B91C1C"
+        android:fillColor="#042F2E"
         android:pathData="M 56,33 C 58,33 59,34 59,36 C 59,38 58,39 56,39 C 54,39 53,38 53,36 C 53,34 54,33 56,33 Z" />
 
     <!-- 宀 (宝盖头) Left Point -->
     <path
-        android:strokeColor="#B91C1C"
+        android:strokeColor="#042F2E"
         android:strokeWidth="3.6"
         android:strokeLineCap="round"
         android:pathData="M 44,40 L 44,45" />
 
     <!-- 宀 (宝盖头) Horizontal Hook -->
     <path
-        android:strokeColor="#B91C1C"
+        android:strokeColor="#042F2E"
         android:strokeWidth="3.6"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -69,7 +69,7 @@
 
     <!-- 子 (子底) Top Turn (横撇) -->
     <path
-        android:strokeColor="#B91C1C"
+        android:strokeColor="#042F2E"
         android:strokeWidth="3.6"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -77,7 +77,7 @@
 
     <!-- 子 (子底) Curved Hook (弯钩) -->
     <path
-        android:strokeColor="#B91C1C"
+        android:strokeColor="#042F2E"
         android:strokeWidth="4.0"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -85,7 +85,7 @@
 
     <!-- 子 (子底) Middle Broad Horizontal Bar (横) -->
     <path
-        android:strokeColor="#B91C1C"
+        android:strokeColor="#042F2E"
         android:strokeWidth="4.2"
         android:strokeLineCap="round"
         android:pathData="M 41,58 L 73,58" />
@@ -93,7 +93,7 @@
     <!-- 7. Golden Magnifier Rim on Top-Right (#F59E0B + #D97706) -->
     <!-- Lens Tint -->
     <path
-        android:fillColor="#22F59E0B"
+        android:fillColor="#26F59E0B"
         android:pathData="M 73,22 C 78,22 82,26 82,31 C 82,36 78,40 73,40 C 68,40 64,36 64,31 C 64,26 68,22 73,22 Z" />
 
     <!-- Lens Rim -->
