@@ -4,11 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -27,8 +28,10 @@ import com.seniordict.app.ui.theme.*
 @Composable
 fun WordDetailSheet(
     character: CharacterEntity,
+    isFavorite: Boolean = false,
     onDismiss: () -> Unit,
-    onSpeak: (CharacterEntity) -> Unit
+    onSpeak: (CharacterEntity) -> Unit,
+    onToggleFavorite: (String) -> Unit = {}
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -50,14 +53,14 @@ fun WordDetailSheet(
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Row: Giant Character Box + Pinyin + Big Speaker Button
+            // Header Row: Giant Character Box + Pinyin + Metadata
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Giant Character Tile (96dp x 96dp)
+                // Giant Character Tile (104dp x 104dp)
                 Box(
                     modifier = Modifier
                         .size(104.dp)
@@ -103,29 +106,67 @@ fun WordDetailSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Big Loudspeaker Button (Min 64dp height for elderly thumb)
-            Button(
-                onClick = { onSpeak(character) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SeniorSuccess
-                ),
-                shape = RoundedCornerShape(16.dp)
+            // Action Row: Loudspeaker Button + Favorites Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.VolumeUp,
-                    contentDescription = "朗读发音",
-                    modifier = Modifier.size(32.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "大声朗读发音",
-                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 22.sp),
-                    color = Color.White
-                )
+                // Big Loudspeaker Button
+                Button(
+                    onClick = { onSpeak(character) },
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .height(64.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SeniorSuccess
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VolumeUp,
+                        contentDescription = "朗读发音",
+                        modifier = Modifier.size(28.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "大声朗读",
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 20.sp),
+                        color = Color.White
+                    )
+                }
+
+                // Bookmark / Favorite Button
+                FilledTonalButton(
+                    onClick = { onToggleFavorite(character.char) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(64.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = if (isFavorite) SeniorWarning.copy(alpha = 0.2f) else SeniorBackground
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        2.dp,
+                        if (isFavorite) SeniorWarning else SeniorBorder
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                        contentDescription = "收藏生字",
+                        tint = if (isFavorite) SeniorWarning else SeniorDark,
+                        modifier = Modifier.size(26.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isFavorite) "已存入" else "存生字本",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isFavorite) SeniorWarning else SeniorDark
+                        )
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

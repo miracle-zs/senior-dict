@@ -2,20 +2,19 @@ package com.seniordict.app.ui.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.RectF
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seniordict.app.data.db.CharacterEntity
+import com.seniordict.app.data.db.FavoriteItem
+import com.seniordict.app.data.db.HistoryItem
 import com.seniordict.app.data.db.SeniorDictDatabase
+import com.seniordict.app.data.preferences.SeniorPreferences
 import com.seniordict.app.data.repository.DictRepository
 import com.seniordict.app.engine.audio.AudioSpeaker
 import com.seniordict.app.engine.ocr.OcrCharacter
-import com.seniordict.app.engine.ocr.OcrLine
 import com.seniordict.app.engine.ocr.OcrPageResult
 import com.seniordict.app.engine.ocr.PpOcrEngine
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class MainUiState(
@@ -24,34 +23,58 @@ data class MainUiState(
     val ocrResult: OcrPageResult? = null,
     val selectedOcrChar: OcrCharacter? = null,
     val selectedEntity: CharacterEntity? = null,
+    val isSelectedCharFavorite: Boolean = false,
     val isDetailSheetVisible: Boolean = false,
     val isSplitDialogVisible: Boolean = false,
     val isHandwritingVisible: Boolean = false,
+    val isHistorySheetVisible: Boolean = false,
+    val isSettingsDialogVisible: Boolean = false,
+    val isTorchOn: Boolean = false,
     val splitCandidates: List<CharacterEntity> = emptyList(),
     val isLoading: Boolean = false,
-    val toastMessage: String? = null
+    val toastMessage: String? = null,
+    val speechRate: Float = SeniorPreferences.RATE_MODERATE,
+    val isMnemonicEnabled: Boolean = true,
+    val isHapticEnabled: Boolean = true
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: DictRepository
+    private val preferences: SeniorPreferences
     private val audioSpeaker: AudioSpeaker
     private val ocrEngine: PpOcrEngine
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
+    val favorites: StateFlow<List<FavoriteItem>>
+    val history: StateFlow<List<HistoryItem>>
+
     init {
         val db = SeniorDictDatabase.getDatabase(application)
         repository = DictRepository(db.dictDao())
-        audioSpeaker = AudioSpeaker(application)
+        preferences = SeniorPreferences(application)
+        audioSpeaker = AudioSpeaker(application, preferences)
         ocrEngine = PpOcrEngine(application)
+
+        _uiState.value = _uiState.value.copy(
+            speechRate = preferences.speechRate,
+            isMnemonicEnabled = preferences.isMnemonicEnabled,
+            isHapticEnabled = preferences.isHapticEnabled
+        )
+
+        favorites = repository.getAllFavoritesFlow()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+        history = repository.getRecentHistoryFlow()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     }
 
     /**
-     * Called when mom hits the big camera shutter button
+     * Called when mom hits the camera shutter button or selects an image from gallery
      */
-    fun onPhotoCaptured(bitmap: Bitmap) {
+    fun onPhotoCaptured(bitmap: Bitmap, source: String = "CAMERA") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isFrozen = true,
@@ -59,7 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isLoading = true
             )
 
-            // 1. Process OCR using real PP-OCRv6 Medium on-device engine
+            // Process OCR using PP-OCRv6 engine
             val ocr = ocrEngine.processImage(bitmap)
 
             _uiState.value = _uiState.value.copy(
@@ -87,9 +110,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 examples = null
             )
 
+            val isFav = repository.isFavorite(entity.char)
+            repository.recordHistory(entity.char, "CAMERA")
+
             _uiState.value = _uiState.value.copy(
                 selectedOcrChar = ocrChar,
                 selectedEntity = entity,
+                isSelectedCharFavorite = isFav,
                 isDetailSheetVisible = true
             )
 
@@ -98,13 +125,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onDirectLookup(char: String) {
+    fun onDirectLookup(char: String, source: String = "MANUAL") {
         viewModelScope.launch {
             val entity = repository.lookupCharacter(char) ?: return@launch
+            val isFav = repository.isFavorite(entity.char)
+            repository.recordHistory(entity.char, source)
+
             _uiState.value = _uiState.value.copy(
                 selectedEntity = entity,
+                isSelectedCharFavorite = isFav,
                 isDetailSheetVisible = true,
-                isSplitDialogVisible = false
+                isSplitDialogVisible = false,
+                isHandwritingVisible = false
             )
             audioSpeaker.speakCharacter(entity.char, entity.pinyin, entity.examples)
         }
@@ -117,9 +149,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Real offline handwriting recognition: rasterizes canvas strokes to bitmap,
+     * feeds into PP-OCR recognition, and finds candidate character entities in DB!
+     */
+    suspend fun recognizeHandwriting(bitmap: Bitmap): List<CharacterEntity> {
+        val ocrResult = ocrEngine.processImage(bitmap)
+        val candidateChars = ocrResult.characters.map { it.char }.distinct()
+        val entities = mutableListOf<CharacterEntity>()
+
+        for (c in candidateChars) {
+            val e = repository.lookupCharacter(c)
+            if (e != null) {
+                entities.add(e)
+            }
+        }
+        return entities
+    }
+
+    fun toggleFavorite(char: String) {
+        viewModelScope.launch {
+            val newFavState = repository.toggleFavorite(char)
+            _uiState.value = _uiState.value.copy(isSelectedCharFavorite = newFavState)
+            audioSpeaker.triggerHapticFeedback()
+        }
+    }
+
+    fun deleteHistoryItem(id: Long) {
+        viewModelScope.launch {
+            repository.deleteHistory(id)
+        }
+    }
+
+    fun clearAllHistory() {
+        viewModelScope.launch {
+            repository.clearHistory()
+        }
+    }
+
     fun speakCurrentCharacter() {
         val entity = _uiState.value.selectedEntity ?: return
         audioSpeaker.speakCharacter(entity.char, entity.pinyin, entity.examples)
+    }
+
+    fun speakCharacterByInfo(char: String, pinyin: String?, examples: String?) {
+        audioSpeaker.speakCharacter(char, pinyin ?: "", examples)
+    }
+
+    fun toggleTorch(turnOn: Boolean) {
+        _uiState.value = _uiState.value.copy(isTorchOn = turnOn)
     }
 
     fun unfreezeCamera() {
@@ -133,6 +211,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun setSpeechRate(rate: Float) {
+        preferences.speechRate = rate
+        audioSpeaker.applySpeechRate(rate)
+        _uiState.value = _uiState.value.copy(speechRate = rate)
+    }
+
+    fun setMnemonicEnabled(enabled: Boolean) {
+        preferences.isMnemonicEnabled = enabled
+        _uiState.value = _uiState.value.copy(isMnemonicEnabled = enabled)
+    }
+
+    fun setHapticEnabled(enabled: Boolean) {
+        preferences.isHapticEnabled = enabled
+        _uiState.value = _uiState.value.copy(isHapticEnabled = enabled)
+    }
+
+    // Dialog & Sheet Visibility Toggles
     fun openSplitDialog() {
         _uiState.value = _uiState.value.copy(isSplitDialogVisible = true)
     }
@@ -149,13 +244,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(isHandwritingVisible = false)
     }
 
+    fun openHistorySheet() {
+        _uiState.value = _uiState.value.copy(isHistorySheetVisible = true)
+    }
+
+    fun closeHistorySheet() {
+        _uiState.value = _uiState.value.copy(isHistorySheetVisible = false)
+    }
+
+    fun openSettingsDialog() {
+        _uiState.value = _uiState.value.copy(isSettingsDialogVisible = true)
+    }
+
+    fun closeSettingsDialog() {
+        _uiState.value = _uiState.value.copy(isSettingsDialogVisible = false)
+    }
+
     fun dismissDetailSheet() {
         _uiState.value = _uiState.value.copy(isDetailSheetVisible = false)
     }
 
     override fun onCleared() {
         super.onCleared()
-        audioSpeaker.destroy()
+        audioSpeaker.shutdown()
         ocrEngine.close()
     }
 }

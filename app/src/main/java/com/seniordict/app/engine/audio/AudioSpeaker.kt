@@ -7,9 +7,13 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import com.seniordict.app.data.preferences.SeniorPreferences
 import java.util.Locale
 
-class AudioSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
+class AudioSpeaker(
+    private val context: Context,
+    private val preferences: SeniorPreferences = SeniorPreferences(context)
+) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
     private var isInitialized = false
@@ -35,8 +39,7 @@ class AudioSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
                 Log.w("AudioSpeaker", "Chinese language not supported by current TTS engine")
                 tts?.setLanguage(Locale.SIMPLIFIED_CHINESE)
             }
-            // 0.8x speed: slow, clear, comfortable for elderly ears
-            tts?.setSpeechRate(0.80f)
+            applySpeechRate(preferences.speechRate)
             tts?.setPitch(1.0f)
             isInitialized = true
         } else {
@@ -44,10 +47,15 @@ class AudioSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
         }
     }
 
+    fun applySpeechRate(rate: Float) {
+        tts?.setSpeechRate(rate)
+    }
+
     /**
      * Provide gentle haptic confirmation when mom taps on a character box
      */
     fun triggerHapticFeedback() {
+        if (!preferences.isHapticEnabled) return
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createOneShot(35, VibrationEffect.DEFAULT_AMPLITUDE))
@@ -62,13 +70,13 @@ class AudioSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
 
     /**
      * Speak character with clear pronunciation and mnemonic word.
-     * e.g., "柏，三声，柏树的柏"
+     * e.g., "柏，拼音是 bǎi，柏树的柏"
      */
     fun speakCharacter(char: String, pinyin: String, examples: String?) {
         triggerHapticFeedback()
 
         val sampleWord = examples?.split("、", ",")?.firstOrNull()?.trim() ?: ""
-        val speechText = if (sampleWord.isNotBlank() && sampleWord.contains(char)) {
+        val speechText = if (preferences.isMnemonicEnabled && sampleWord.isNotBlank() && sampleWord.contains(char)) {
             "${char}，拼音是 ${pinyin}，${sampleWord}的${char}。"
         } else {
             "${char}，拼音是 ${pinyin}。"
@@ -98,9 +106,12 @@ class AudioSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
         tts?.stop()
     }
 
-    fun destroy() {
-        tts?.stop()
-        tts?.shutdown()
-        tts = null
+    fun shutdown() {
+        try {
+            tts?.stop()
+            tts?.shutdown()
+        } catch (e: Exception) {
+            Log.e("AudioSpeaker", "TTS shutdown error", e)
+        }
     }
 }

@@ -6,7 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [CharacterEntity::class, CharComponentEntity::class],
+    entities = [
+        CharacterEntity::class,
+        CharComponentEntity::class,
+        SearchHistoryEntity::class,
+        FavoriteEntity::class
+    ],
     version = 1,
     exportSchema = false
 )

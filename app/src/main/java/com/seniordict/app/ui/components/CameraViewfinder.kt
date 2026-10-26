@@ -8,21 +8,35 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.seniordict.app.engine.ocr.OcrImageResizePolicy
+import com.seniordict.app.ui.theme.SeniorDark
+import com.seniordict.app.ui.theme.SeniorWarning
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
@@ -30,6 +44,8 @@ import java.util.concurrent.Executors
 @Composable
 fun CameraViewfinder(
     imageCaptureRef: (ImageCapture) -> Unit,
+    isTorchOn: Boolean = false,
+    onTorchToggle: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -44,6 +60,14 @@ fun CameraViewfinder(
     DisposableEffect(Unit) {
         onDispose {
             cameraExecutor.shutdown()
+        }
+    }
+
+    LaunchedEffect(isTorchOn, cameraControl) {
+        try {
+            cameraControl?.enableTorch(isTorchOn)
+        } catch (e: Exception) {
+            Log.e("CameraViewfinder", "Torch toggle failed", e)
         }
     }
 
@@ -143,6 +167,39 @@ fun CameraViewfinder(
                     color = Color.White,
                     radius = 4.dp.toPx(),
                     center = offset
+                )
+            }
+        }
+
+        // Floating Flashlight (Torch) Button on Top Right
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 16.dp, end = 16.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .clickable { onTorchToggle(!isTorchOn) },
+            color = if (isTorchOn) SeniorWarning else Color(0x77000000),
+            shape = RoundedCornerShape(22.dp),
+            shadowElevation = 4.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (isTorchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
+                    contentDescription = "补光灯",
+                    tint = if (isTorchOn) SeniorDark else Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = if (isTorchOn) "已开灯" else "补光灯",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isTorchOn) SeniorDark else Color.White
+                    )
                 )
             }
         }

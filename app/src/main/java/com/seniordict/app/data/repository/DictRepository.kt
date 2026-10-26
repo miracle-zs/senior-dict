@@ -1,8 +1,8 @@
 package com.seniordict.app.data.repository
 
-import com.seniordict.app.data.db.CharacterEntity
-import com.seniordict.app.data.db.SeniorDictDao
+import com.seniordict.app.data.db.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class DictRepository(private val dao: SeniorDictDao) {
@@ -125,4 +125,40 @@ class DictRepository(private val dao: SeniorDictDao) {
         }
         fallbackSet.take(15)
     }
+
+    // --- Search History ---
+    suspend fun recordHistory(char: String, source: String = "CAMERA") = withContext(Dispatchers.IO) {
+        if (char.isBlank()) return@withContext
+        dao.insertHistory(SearchHistoryEntity(char = char, source = source))
+    }
+
+    fun getRecentHistoryFlow(): Flow<List<HistoryItem>> = dao.getRecentHistoryFlow()
+
+    suspend fun deleteHistory(id: Long) = withContext(Dispatchers.IO) {
+        dao.deleteHistoryById(id)
+    }
+
+    suspend fun clearHistory() = withContext(Dispatchers.IO) {
+        dao.clearHistory()
+    }
+
+    // --- Favorites (生字本) ---
+    suspend fun toggleFavorite(char: String): Boolean = withContext(Dispatchers.IO) {
+        val isFav = dao.isFavorite(char)
+        if (isFav) {
+            dao.removeFavorite(char)
+            false
+        } else {
+            dao.addFavorite(FavoriteEntity(char = char))
+            true
+        }
+    }
+
+    suspend fun isFavorite(char: String): Boolean = withContext(Dispatchers.IO) {
+        dao.isFavorite(char)
+    }
+
+    fun isFavoriteFlow(char: String): Flow<Boolean> = dao.isFavoriteFlow(char)
+
+    fun getAllFavoritesFlow(): Flow<List<FavoriteItem>> = dao.getAllFavoritesFlow()
 }
