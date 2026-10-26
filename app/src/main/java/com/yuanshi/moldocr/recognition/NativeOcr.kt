@@ -6,6 +6,11 @@ import java.nio.ByteBuffer
 object NativeOcr {
     init {
         try {
+            System.loadLibrary("c++_shared")
+        } catch (t: Throwable) {
+            android.util.Log.w("NativeOcr", "libc++_shared preload: ${t.message}")
+        }
+        try {
             System.loadLibrary("MNN")
             System.loadLibrary("MNN_CL")
         } catch (t: Throwable) {

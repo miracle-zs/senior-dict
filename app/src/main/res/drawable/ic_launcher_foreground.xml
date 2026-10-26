@@ -8,56 +8,56 @@
     <!-- 1. Soft Drop Shadow for Dictionary Book -->
     <path
         android:fillColor="#33000000"
-        android:pathData="M35,24 h40 a9,9 0 0 1 9,9 v46 a9,9 0 0 1 -9,9 h-40 a9,9 0 0 1 -9,-9 v-46 a9,9 0 0 1 9,-9 z" />
+        android:pathData="M 37,26 L 75,26 C 80,26 84,30 84,35 L 84,81 C 84,86 80,90 75,90 L 37,90 C 32,90 28,86 28,81 L 28,35 C 28,30 32,26 37,26 Z" />
 
     <!-- 2. Dictionary Hardcover Body (Parchment Crisp White #FFFFFF) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M33,22 h40 a8,8 0 0 1 8,8 v48 a8,8 0 0 1 -8,8 h-40 a8,8 0 0 1 -8,-8 v-48 a8,8 0 0 1 8,-8 z" />
+        android:pathData="M 35,23 L 73,23 C 78,23 82,27 82,32 L 82,78 C 82,83 78,87 73,87 L 35,87 C 30,87 26,83 26,78 L 26,32 C 26,27 30,23 35,23 Z" />
 
     <!-- 3. Golden Hardcover Spine (Left binding stripe #F59E0B) -->
     <path
         android:fillColor="#F59E0B"
-        android:pathData="M25,30 a8,8 0 0 1 8,-8 h4 v64 h-4 a8,8 0 0 1 -8,-8 z" />
+        android:pathData="M 35,23 L 38,23 L 38,87 L 35,87 C 30,87 26,83 26,78 L 26,32 C 26,27 30,23 35,23 Z" />
 
     <!-- Spine classical gold ribs -->
     <path
         android:strokeColor="#D97706"
-        android:strokeWidth="1.2"
+        android:strokeWidth="1.5"
         android:strokeLineCap="round"
-        android:pathData="M26,33 h10 M26,53 h10 M26,73 h10" />
+        android:pathData="M 27,35 L 37,35 M 27,55 L 37,55 M 27,75 L 37,75" />
 
     <!-- 4. Classical Cinnabar Red Bookmark Ribbon (Bottom) -->
     <path
         android:fillColor="#DC2626"
-        android:pathData="M60,82 v9 l4,-3 l4,3 v-9 z" />
+        android:pathData="M 60,82 L 60,92 L 64,89 L 68,92 L 68,82 Z" />
 
     <!-- 5. Inner Tianzige Calligraphy Framing (Gold Watermark) -->
     <path
         android:strokeColor="#F59E0B"
         android:strokeWidth="1.2"
         android:strokeAlpha="0.4"
-        android:pathData="M39,30 h36 v46 h-36 z" />
+        android:pathData="M 40,30 L 76,30 L 76,76 L 40,76 Z" />
 
     <!-- Tianzige dashed crosshair guidelines -->
     <path
         android:strokeColor="#F59E0B"
         android:strokeWidth="0.8"
         android:strokeAlpha="0.3"
-        android:pathData="M57,30 v46 M39,53 h36" />
+        android:pathData="M 58,30 L 58,76 M 40,53 L 76,53" />
 
     <!-- 6. Bold Chinese Character '字' (Cinnabar Red #B91C1C) -->
     <!-- 宀 (宝盖头) Top Dot -->
     <path
         android:fillColor="#B91C1C"
-        android:pathData="M55,34 a2.2,2.2 0 1 1 4.4,0 a2.2,2.2 0 1 1 -4.4,0 z" />
+        android:pathData="M 56,33 C 58,33 59,34 59,36 C 59,38 58,39 56,39 C 54,39 53,38 53,36 C 53,34 54,33 56,33 Z" />
 
     <!-- 宀 (宝盖头) Left Point -->
     <path
         android:strokeColor="#B91C1C"
         android:strokeWidth="3.6"
         android:strokeLineCap="round"
-        android:pathData="M44,40 v5" />
+        android:pathData="M 44,40 L 44,45" />
 
     <!-- 宀 (宝盖头) Horizontal Hook -->
     <path
@@ -65,7 +65,7 @@
         android:strokeWidth="3.6"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M44,40 h26 l-2,4.5" />
+        android:pathData="M 44,40 L 70,40 L 68,45" />
 
     <!-- 子 (子底) Top Turn (横撇) -->
     <path
@@ -73,40 +73,40 @@
         android:strokeWidth="3.6"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M47,48 h18 l-13,7" />
+        android:pathData="M 48,48 L 66,48 L 53,55" />
 
     <!-- 子 (子底) Curved Hook (弯钩) -->
     <path
         android:strokeColor="#B91C1C"
-        android:strokeWidth="4"
+        android:strokeWidth="4.0"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M52,55 c4,4 5.5,9 5.5,14 c0,2.5 -1.5,3.5 -4,2.5" />
+        android:pathData="M 53,55 C 57,59 58,64 58,69 C 58,72 56,73 53,71" />
 
     <!-- 子 (子底) Middle Broad Horizontal Bar (横) -->
     <path
         android:strokeColor="#B91C1C"
         android:strokeWidth="4.2"
         android:strokeLineCap="round"
-        android:pathData="M41,58 h32" />
+        android:pathData="M 41,58 L 73,58" />
 
     <!-- 7. Golden Magnifier Rim on Top-Right (#F59E0B + #D97706) -->
     <!-- Lens Tint -->
     <path
         android:fillColor="#22F59E0B"
-        android:pathData="M73,30 m-9,0 a9,9 0 1 1 18,0 a9,9 0 1 1 -18,0" />
+        android:pathData="M 73,22 C 78,22 82,26 82,31 C 82,36 78,40 73,40 C 68,40 64,36 64,31 C 64,26 68,22 73,22 Z" />
 
     <!-- Lens Rim -->
     <path
         android:strokeColor="#F59E0B"
         android:strokeWidth="3.2"
-        android:pathData="M73,30 m-9,0 a9,9 0 1 1 18,0 a9,9 0 1 1 -18,0" />
+        android:pathData="M 73,22 C 78,22 82,26 82,31 C 82,36 78,40 73,40 C 68,40 64,36 64,31 C 64,26 68,22 73,22 Z" />
 
     <!-- Lens Handle -->
     <path
         android:strokeColor="#D97706"
-        android:strokeWidth="4"
+        android:strokeWidth="4.0"
         android:strokeLineCap="round"
-        android:pathData="M80,37 L87,44" />
+        android:pathData="M 80,38 L 88,46" />
 
 </vector>

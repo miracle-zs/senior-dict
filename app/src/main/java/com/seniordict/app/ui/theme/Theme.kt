@@ -29,13 +29,17 @@ fun SeniorDictTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val activity = generateSequence(view.context) { ctx ->
-                if (ctx is ContextWrapper) ctx.baseContext else null
-            }.filterIsInstance<Activity>().firstOrNull()
+            try {
+                val activity = generateSequence(view.context) { ctx ->
+                    if (ctx is ContextWrapper) ctx.baseContext else null
+                }.filterIsInstance<Activity>().firstOrNull()
 
-            activity?.window?.let { window ->
-                window.statusBarColor = SeniorBackground.toArgb()
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+                activity?.window?.let { window ->
+                    window.statusBarColor = SeniorBackground.toArgb()
+                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+                }
+            } catch (t: Throwable) {
+                // Safeguard against OEM ROM window controller exceptions on older MIUI/EMUI
             }
         }
     }

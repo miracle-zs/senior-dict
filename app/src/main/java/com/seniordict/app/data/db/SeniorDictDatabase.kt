@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
         SearchHistoryEntity::class,
         FavoriteEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class SeniorDictDatabase : RoomDatabase() {
