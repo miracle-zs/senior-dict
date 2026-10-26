@@ -17,7 +17,20 @@ import com.seniordict.app.engine.ocr.PpOcrEngine
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+enum class AppScreenMode {
+    HOME,
+    CAMERA
+}
+
+data class DailyWord(
+    val char: String,
+    val pinyin: String,
+    val blessing: String,
+    val lifeMeaning: String
+)
+
 data class MainUiState(
+    val currentScreen: AppScreenMode = AppScreenMode.HOME,
     val isFrozen: Boolean = false,
     val capturedBitmap: Bitmap? = null,
     val ocrResult: OcrPageResult? = null,
@@ -36,7 +49,10 @@ data class MainUiState(
     val currentCaptureSource: String = "CAMERA",
     val speechRate: Float = SeniorPreferences.RATE_MODERATE,
     val isMnemonicEnabled: Boolean = true,
-    val isHapticEnabled: Boolean = true
+    val isHapticEnabled: Boolean = true,
+    val searchQuery: String = "",
+    val dailyWord: DailyWord? = null,
+    val dailyEntity: CharacterEntity? = null
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -51,6 +67,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val favorites: StateFlow<List<FavoriteItem>>
     val history: StateFlow<List<HistoryItem>>
+
+
+    private val dailyWords = listOf(
+        DailyWord("福", "fú", "福星高照 · 幸福安康", "福气安康，全家和睦幸福，福泽绵长。"),
+        DailyWord("康", "kāng", "身心康健 · 松柏长青", "身体硬朗无病痛，精神矍铄有活力。"),
+        DailyWord("安", "ān", "岁岁平安 · 宁静致远", "出入平安，居室安宁，心中踏实。"),
+        DailyWord("寿", "shòu", "福寿双全 · 健康长寿", "寿命绵长，晚年闲适有福气。"),
+        DailyWord("和", "hé", "家和万事兴 · 和气致祥", "家庭和美，邻里和睦，心平气和。"),
+        DailyWord("乐", "lè", "知足常乐 · 笑口常开", "笑对生活，天天开心无烦恼。"),
+        DailyWord("顺", "shùn", "万事顺意 · 从容顺遂", "事情顺利，儿孙省心，日子顺畅。"),
+        DailyWord("泰", "tài", "天地泰然 · 稳如泰山", "心态平稳，安享晚年祥和清福。"),
+        DailyWord("春", "chūn", "润物万新 · 春风拂面", "生机勃勃，心态年轻，朝气常在。"),
+        DailyWord("健", "jiàn", "天行健也 · 步履矫健", "筋骨强健，步履从容，身心轻快。"),
+        DailyWord("喜", "xǐ", "喜上眉梢 · 阖家欢喜", "常有喜事，心中愉悦，笑逐颜开。"),
+        DailyWord("祥", "xiáng", "吉祥如意 · 瑞气祥云", "祥瑞满门，吉庆常伴，福禄双全。")
+    )
 
     init {
         val db = SeniorDictDatabase.getDatabase(application)
@@ -70,7 +102,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         history = repository.getRecentHistoryFlow()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+        // Initialize Daily Auspicious Character for seniors
+        val dayIndex = (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR)) % dailyWords.size
+        val today = dailyWords[dayIndex]
+        _uiState.value = _uiState.value.copy(dailyWord = today)
+
+        viewModelScope.launch {
+            val entity = repository.lookupCharacter(today.char)
+            if (entity != null) {
+                _uiState.value = _uiState.value.copy(dailyEntity = entity)
+            }
+        }
     }
+
 
     /**
      * Called when mom hits the camera shutter button or selects an image from gallery
@@ -271,6 +316,52 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun dismissDetailSheet() {
         _uiState.value = _uiState.value.copy(isDetailSheetVisible = false)
+    }
+
+    // Screen Mode Toggles (Home vs Camera)
+    fun openCamera() {
+        _uiState.value = _uiState.value.copy(currentScreen = AppScreenMode.CAMERA)
+    }
+
+    fun closeCamera() {
+        unfreezeCamera()
+        _uiState.value = _uiState.value.copy(currentScreen = AppScreenMode.HOME)
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    fun submitSearch(query: String) {
+        val q = query.trim()
+        if (q.isEmpty()) return
+        viewModelScope.launch {
+            val entity = repository.lookupCharacter(q)
+            if (entity != null) {
+                onDirectLookup(entity.char, source = "SEARCH")
+                return@launch
+            }
+            val pinyinMatches = repository.searchByPinyin(q)
+            if (pinyinMatches.isNotEmpty()) {
+                onDirectLookup(pinyinMatches.first().char, source = "SEARCH")
+                return@launch
+            }
+            val splitMatches = repository.naturalLanguageSplitQuery(q)
+            if (splitMatches.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(
+                    splitCandidates = splitMatches,
+                    isSplitDialogVisible = true
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    toastMessage = "未找到“$q”，可尝试手写或拆字查字"
+                )
+            }
+        }
+    }
+
+    fun clearToastMessage() {
+        _uiState.value = _uiState.value.copy(toastMessage = null)
     }
 
     override fun onCleared() {
