@@ -73,22 +73,19 @@ class AudioSpeaker(
     }
 
     /**
-     * Speak character with clear pronunciation and mnemonic word.
-     * e.g., "柏，拼音是 bǎi，柏树的柏"
+     * Speak character with clear, natural Mandarin pronunciation and plain-language mnemonic word.
+     * Avoids reading raw Latin pinyin string to prevent robotic/foreign TTS glitches.
+     * e.g., "福。幸福的福。" / "药。吃药的药。" / "大。大家的大。"
      */
+    @Suppress("UNUSED_PARAMETER")
     fun speakCharacter(char: String, pinyin: String, examples: String?) {
         triggerHapticFeedback()
 
-        val sampleWord = examples?.split("、", ",")?.firstOrNull()?.trim() ?: ""
-        val speechText = when {
-            preferences.isMnemonicEnabled && sampleWord.isNotBlank() && sampleWord.contains(char) && pinyin.isNotBlank() ->
-                "${char}，拼音是 ${pinyin}，${sampleWord}的${char}。"
-            pinyin.isNotBlank() ->
-                "${char}，拼音是 ${pinyin}。"
-            sampleWord.isNotBlank() && sampleWord.contains(char) ->
-                "${char}，${sampleWord}的${char}。"
-            else ->
-                "${char}。"
+        val sampleWord = examples?.split("、", ",", "，", " ")?.firstOrNull { it.contains(char) && it.length in 2..4 }?.trim() ?: ""
+        val speechText = if (preferences.isMnemonicEnabled && sampleWord.isNotBlank()) {
+            "${char}。${sampleWord}的${char}。"
+        } else {
+            "${char}。"
         }
 
         speak(speechText)

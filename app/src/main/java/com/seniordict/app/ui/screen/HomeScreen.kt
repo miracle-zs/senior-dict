@@ -520,7 +520,7 @@ fun HomeScreen(
                             viewModel.onDirectLookup(daily.char, source = "DAILY_CARD")
                         },
                         onSpeakWord = {
-                            viewModel.speakWord("${daily.char}，${daily.pinyin}。${daily.blessing}")
+                            viewModel.speakWord("${daily.char}。${daily.blessing}")
                         }
                     )
                 }

@@ -212,11 +212,30 @@ fun WordDetailSheet(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Section 1: Plain Chinese Explanation (生活大白话解释)
-            Text(
-                text = "【常用大白话解释】",
-                style = MaterialTheme.typography.titleLarge,
-                color = SeniorDark
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "【常用大白话解释】",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = SeniorDark
+                )
+                if (!character.definition.isNullOrBlank()) {
+                    IconButton(
+                        onClick = { onSpeakWord(character.definition) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = "朗读解释",
+                            tint = SeniorSuccess,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 modifier = Modifier.fillMaxWidth(),
