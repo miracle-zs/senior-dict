@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">银发字典</string>
+    <string name="camera_permission_required">需要相机权限来帮您拍照识字</string>
+    <string name="grant_permission">开启相机</string>
+    <string name="take_photo_hint">对准生字拍照，点击屏幕上的字就能查</string>
+    <string name="tap_to_read">点字朗读</string>
+    <string name="split_query_hint">例如：左边木，右边白</string>
+</resources>
