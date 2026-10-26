@@ -128,8 +128,10 @@ class DictRepository(private val dao: SeniorDictDao) {
 
     // --- Search History ---
     suspend fun recordHistory(char: String, source: String = "CAMERA") = withContext(Dispatchers.IO) {
-        if (char.isBlank()) return@withContext
-        dao.insertHistory(SearchHistoryEntity(char = char, source = source))
+        val trimmed = char.trim()
+        if (trimmed.isBlank()) return@withContext
+        dao.deleteHistoryByChar(trimmed)
+        dao.insertHistory(SearchHistoryEntity(char = trimmed, source = source))
     }
 
     fun getRecentHistoryFlow(): Flow<List<HistoryItem>> = dao.getRecentHistoryFlow()

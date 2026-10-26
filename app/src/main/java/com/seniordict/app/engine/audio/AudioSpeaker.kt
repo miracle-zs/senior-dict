@@ -76,10 +76,15 @@ class AudioSpeaker(
         triggerHapticFeedback()
 
         val sampleWord = examples?.split("、", ",")?.firstOrNull()?.trim() ?: ""
-        val speechText = if (preferences.isMnemonicEnabled && sampleWord.isNotBlank() && sampleWord.contains(char)) {
-            "${char}，拼音是 ${pinyin}，${sampleWord}的${char}。"
-        } else {
-            "${char}，拼音是 ${pinyin}。"
+        val speechText = when {
+            preferences.isMnemonicEnabled && sampleWord.isNotBlank() && sampleWord.contains(char) && pinyin.isNotBlank() ->
+                "${char}，拼音是 ${pinyin}，${sampleWord}的${char}。"
+            pinyin.isNotBlank() ->
+                "${char}，拼音是 ${pinyin}。"
+            sampleWord.isNotBlank() && sampleWord.contains(char) ->
+                "${char}，${sampleWord}的${char}。"
+            else ->
+                "${char}。"
         }
 
         speak(speechText)

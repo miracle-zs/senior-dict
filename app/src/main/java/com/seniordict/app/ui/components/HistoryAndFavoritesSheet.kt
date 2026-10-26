@@ -329,7 +329,7 @@ fun CharacterListItemCard(
                         color = SeniorPrimary
                     )
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = definition,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -339,6 +339,18 @@ fun CharacterListItemCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (!examples.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "组词：${examples.split("、", ",").take(2).joinToString("、")}",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 13.sp,
+                            color = SeniorTextMuted
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))

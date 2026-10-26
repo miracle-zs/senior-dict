@@ -51,7 +51,7 @@ fun OcrOverlayCanvas(
             val width = ch.bounds.width() * scaleX
             val height = ch.bounds.height() * scaleY
 
-            val isSelected = selectedChar?.char == ch.char && selectedChar?.bounds == ch.bounds
+            val isSelected = selectedChar != null && selectedChar.char == ch.char && selectedChar.bounds == ch.bounds
 
             val fillColor = if (isSelected) OcrBoxSelectedFill else OcrBoxFill
             val borderColor = if (isSelected) OcrBoxSelectedBorder else OcrBoxBorder

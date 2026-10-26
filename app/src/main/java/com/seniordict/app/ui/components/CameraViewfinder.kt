@@ -48,7 +48,6 @@ fun CameraViewfinder(
     onTorchToggle: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val coroutineScope = rememberCoroutineScope()

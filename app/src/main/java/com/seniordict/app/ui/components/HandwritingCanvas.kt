@@ -254,9 +254,15 @@ fun HandwritingCanvasDialog(
                             hasRecognizedOnce = true
                             val bmp = rasterizeCanvas(paths)
                             coroutineScope.launch {
-                                val result = onRecognize(bmp)
-                                candidates = result
-                                isRecognizing = false
+                                try {
+                                    val result = onRecognize(bmp)
+                                    candidates = result
+                                } finally {
+                                    isRecognizing = false
+                                    if (!bmp.isRecycled) {
+                                        bmp.recycle()
+                                    }
+                                }
                             }
                         },
                         enabled = paths.isNotEmpty() && !isRecognizing,

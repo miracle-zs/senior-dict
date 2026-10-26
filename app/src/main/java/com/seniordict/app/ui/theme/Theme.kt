@@ -1,6 +1,7 @@
 package com.seniordict.app.ui.theme
 
 import android.app.Activity
+import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
@@ -28,9 +29,14 @@ fun SeniorDictTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = SeniorBackground.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+            val activity = generateSequence(view.context) { ctx ->
+                if (ctx is ContextWrapper) ctx.baseContext else null
+            }.filterIsInstance<Activity>().firstOrNull()
+
+            activity?.window?.let { window ->
+                window.statusBarColor = SeniorBackground.toArgb()
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+            }
         }
     }
 

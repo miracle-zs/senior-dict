@@ -33,6 +33,7 @@ data class MainUiState(
     val splitCandidates: List<CharacterEntity> = emptyList(),
     val isLoading: Boolean = false,
     val toastMessage: String? = null,
+    val currentCaptureSource: String = "CAMERA",
     val speechRate: Float = SeniorPreferences.RATE_MODERATE,
     val isMnemonicEnabled: Boolean = true,
     val isHapticEnabled: Boolean = true
@@ -79,6 +80,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(
                 isFrozen = true,
                 capturedBitmap = bitmap,
+                currentCaptureSource = source,
                 isLoading = true
             )
 
@@ -111,7 +113,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
 
             val isFav = repository.isFavorite(entity.char)
-            repository.recordHistory(entity.char, "CAMERA")
+            repository.recordHistory(entity.char, _uiState.value.currentCaptureSource)
 
             _uiState.value = _uiState.value.copy(
                 selectedOcrChar = ocrChar,

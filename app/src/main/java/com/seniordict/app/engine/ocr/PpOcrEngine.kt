@@ -49,15 +49,13 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
         val width = bitmap.width
         val height = bitmap.height
 
-        // Attempt Native PP-OCRv6 inference
+        // Run Native PP-OCRv6 inference
         val nativeResult = tryRunNativeOcr(bitmap)
-        if (nativeResult != null && nativeResult.characters.isNotEmpty()) {
+        if (nativeResult != null) {
             return@withContext nativeResult
         }
 
-        // Fallback: If native engine unavailable (e.g. x86 emulator)
-        Log.w("PpOcrEngine", "Using adaptive fallback detection")
-        generateFallbackGrid(width, height)
+        OcrPageResult(emptyList(), emptyList(), width, height)
     }
 
     private fun tryRunNativeOcr(bitmap: Bitmap): OcrPageResult? {
@@ -156,7 +154,9 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
     }
 
     /**
-     * Segment text lines into square Chinese character touch areas
+     * Segment text lines into square Chinese character touch areas.
+     * Only actual Chinese characters get interactive touch targets,
+     * filtering out English units, numbers, and punctuation.
      */
     fun segmentLineToCharacters(lineText: String, lineBounds: RectF, confidence: Float): List<OcrCharacter> {
         val chars = lineText.trim()
@@ -167,12 +167,13 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
         val charWidth = (lineBounds.right - lineBounds.left) / totalChars.toFloat()
 
         for (i in 0 until totalChars) {
-            val ch = chars[i].toString()
-            if (ch.isNotBlank()) {
+            val ch = chars[i]
+            val isChinese = (ch in '\u4e00'..'\u9fa5') || (ch in '\u3400'..'\u4dbf')
+            if (isChinese) {
                 val left = lineBounds.left + i * charWidth
                 val right = left + charWidth
                 val bounds = RectF(left, lineBounds.top, right, lineBounds.bottom)
-                results.add(OcrCharacter(char = ch, bounds = bounds, confidence = confidence))
+                results.add(OcrCharacter(char = ch.toString(), bounds = bounds, confidence = confidence))
             }
         }
         return results
@@ -224,31 +225,6 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
             }
         }
         return destFile
-    }
-
-    private fun generateFallbackGrid(w: Int, h: Int): OcrPageResult {
-        val sampleWords = listOf("柏", "药", "糖", "露", "赢", "明", "福", "寿")
-        val characters = mutableListOf<OcrCharacter>()
-        val startY = h * 0.35f
-        val boxSize = w * 0.18f
-        val gap = w * 0.04f
-
-        for (row in 0 until 2) {
-            for (col in 0 until 4) {
-                val index = row * 4 + col
-                if (index < sampleWords.size) {
-                    val left = w * 0.08f + col * (boxSize + gap)
-                    val top = startY + row * (boxSize + gap)
-                    characters.add(
-                        OcrCharacter(
-                            char = sampleWords[index],
-                            bounds = RectF(left, top, left + boxSize, top + boxSize)
-                        )
-                    )
-                }
-            }
-        }
-        return OcrPageResult(characters, emptyList(), w, h)
     }
 
     override fun close() {

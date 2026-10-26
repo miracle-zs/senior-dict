@@ -94,6 +94,11 @@ fun MainScreen(viewModel: MainViewModel) {
 
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraExecutor.shutdown()
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) {

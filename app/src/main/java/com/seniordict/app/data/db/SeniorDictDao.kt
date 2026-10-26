@@ -73,6 +73,9 @@ interface SeniorDictDao {
     @Query("DELETE FROM search_history WHERE id = :id")
     suspend fun deleteHistoryById(id: Long)
 
+    @Query("DELETE FROM search_history WHERE char = :character")
+    suspend fun deleteHistoryByChar(character: String)
+
     @Query("DELETE FROM search_history")
     suspend fun clearHistory()
 
