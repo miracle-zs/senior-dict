@@ -189,19 +189,36 @@ fun HandwritingCanvasDialog(
                             items(candidates) { entity ->
                                 Surface(
                                     modifier = Modifier
-                                        .size(68.dp)
+                                        .width(74.dp)
+                                        .height(84.dp)
                                         .clip(RoundedCornerShape(14.dp))
                                         .border(2.5.dp, SeniorPrimary, RoundedCornerShape(14.dp))
                                         .clickable {
                                             onSelectChar(entity)
                                         },
-                                    color = SeniorPrimary.copy(alpha = 0.1f)
+                                    color = SeniorPrimary.copy(alpha = 0.08f)
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = entity.pinyin,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = SeniorPrimary
+                                            ),
+                                            maxLines = 1
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = entity.char,
                                             style = MaterialTheme.typography.headlineLarge.copy(
-                                                fontSize = 36.sp,
+                                                fontSize = 34.sp,
                                                 fontWeight = FontWeight.ExtraBold,
                                                 color = SeniorDark
                                             )

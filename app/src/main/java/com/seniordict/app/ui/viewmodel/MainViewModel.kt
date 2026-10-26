@@ -198,6 +198,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         audioSpeaker.speakCharacter(char, pinyin ?: "", examples)
     }
 
+    /**
+     * Speak an everyday vocabulary word out loud with haptic feedback
+     */
+    fun speakWord(word: String) {
+        audioSpeaker.speakText(word)
+    }
+
     fun toggleTorch(turnOn: Boolean) {
         _uiState.value = _uiState.value.copy(isTorchOn = turnOn)
     }

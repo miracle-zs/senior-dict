@@ -132,58 +132,39 @@ fun MainScreen(viewModel: MainViewModel) {
                         )
                     )
 
-                    // Action buttons
+                    // Action buttons (Spacious, anti-font-scaling layout)
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // "偏旁拆字" Button
                         FilledTonalButton(
                             onClick = { viewModel.openSplitDialog() },
                             shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Icon(Icons.Default.Extension, contentDescription = "拆字", modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("拆字", style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp))
+                            Text("拆字", style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold))
                         }
 
                         // "手写板" Button
                         FilledTonalButton(
                             onClick = { viewModel.openHandwriting() },
                             shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Icon(Icons.Default.Create, contentDescription = "手写", modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("手写", style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp))
-                        }
-
-                        // "生字本" Button
-                        FilledTonalButton(
-                            onClick = { viewModel.openHistorySheet() },
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (favorites.isNotEmpty()) SeniorWarning.copy(alpha = 0.25f) else SeniorBorder
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = "生字本",
-                                modifier = Modifier.size(18.dp),
-                                tint = if (favorites.isNotEmpty()) SeniorWarning else SeniorDark
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("生字本", style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp))
+                            Text("手写", style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold))
                         }
 
                         // "设置" Gear Button
                         IconButton(
                             onClick = { viewModel.openSettingsDialog() },
-                            modifier = Modifier.size(38.dp)
+                            modifier = Modifier.size(42.dp)
                         ) {
-                            Icon(Icons.Default.Settings, contentDescription = "设置", modifier = Modifier.size(22.dp), tint = SeniorDark)
+                            Icon(Icons.Default.Settings, contentDescription = "设置", modifier = Modifier.size(24.dp), tint = SeniorDark)
                         }
                     }
                 }
@@ -339,26 +320,8 @@ fun MainScreen(viewModel: MainViewModel) {
                             onTorchToggle = { viewModel.toggleTorch(it) }
                         )
 
-                        // Central Alignment Framing Box
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.85f)
-                                .height(220.dp)
-                                .align(Alignment.Center)
-                                .border(2.dp, Color(0x88FFFFFF), RoundedCornerShape(20.dp))
-                        ) {
-                            Text(
-                                text = "把不认识的字放在框内拍照",
-                                color = Color.White,
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(bottom = 12.dp)
-                            )
-                        }
+                        // Central Professional Framing Reticle Box
+                        FramingReticleBox(modifier = Modifier.align(Alignment.Center))
                     }
                 }
 
@@ -396,7 +359,8 @@ fun MainScreen(viewModel: MainViewModel) {
                             )
                         }
                     } else {
-                        // Live Camera Bottom Controls: Gallery Import (Left) + Big Shutter (Center)
+                        // Live Camera Bottom Controls: Golden 3-Point Symmetry
+                        // Gallery Import (Left) + Big Shutter (Center) + Favorites Shortcut (Right)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -464,8 +428,56 @@ fun MainScreen(viewModel: MainViewModel) {
                                 }
                             }
 
-                            // Placeholder / Spacer to balance the layout
-                            Spacer(modifier = Modifier.size(60.dp))
+                            // "生字本" Shortcut with dynamic gold counter badge
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.clickable { viewModel.openHistorySheet() }
+                            ) {
+                                BadgedBox(
+                                    badge = {
+                                        if (favorites.isNotEmpty()) {
+                                            Badge(
+                                                containerColor = SeniorWarning,
+                                                contentColor = SeniorDark
+                                            ) {
+                                                Text(
+                                                    text = if (favorites.size > 99) "99+" else "${favorites.size}",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.ExtraBold
+                                                )
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(60.dp),
+                                        shape = CircleShape,
+                                        color = if (favorites.isNotEmpty()) SeniorWarning.copy(alpha = 0.25f) else Color(0x66000000),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            2.dp,
+                                            if (favorites.isNotEmpty()) SeniorWarning else Color.White.copy(alpha = 0.8f)
+                                        )
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                Icons.Default.Star,
+                                                contentDescription = "生字本",
+                                                tint = if (favorites.isNotEmpty()) SeniorWarning else Color.White,
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "生字本",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -480,6 +492,7 @@ fun MainScreen(viewModel: MainViewModel) {
             isFavorite = uiState.isSelectedCharFavorite,
             onDismiss = { viewModel.dismissDetailSheet() },
             onSpeak = { viewModel.speakCurrentCharacter() },
+            onSpeakWord = { word -> viewModel.speakWord(word) },
             onToggleFavorite = { char -> viewModel.toggleFavorite(char) }
         )
     }

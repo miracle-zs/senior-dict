@@ -1,5 +1,6 @@
 package com.seniordict.app.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -7,16 +8,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,13 +29,14 @@ import androidx.compose.ui.unit.sp
 import com.seniordict.app.data.db.CharacterEntity
 import com.seniordict.app.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun WordDetailSheet(
     character: CharacterEntity,
     isFavorite: Boolean = false,
     onDismiss: () -> Unit,
     onSpeak: (CharacterEntity) -> Unit,
+    onSpeakWord: (String) -> Unit = {},
     onToggleFavorite: (String) -> Unit = {}
 ) {
     ModalBottomSheet(
@@ -53,14 +59,14 @@ fun WordDetailSheet(
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Row: Giant Character Box + Pinyin + Metadata
+            // Header Row: Giant Character Box with Calligraphy Tianzige + Pinyin + Metadata
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Giant Character Tile (104dp x 104dp)
+                // Giant Character Tile (104dp x 104dp) with Chinese Calligraphy Tianzige
                 Box(
                     modifier = Modifier
                         .size(104.dp)
@@ -69,6 +75,40 @@ fun WordDetailSheet(
                         .border(2.dp, SeniorBorder, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
+                    // Tianzige (田字格) Calligraphy Watermark Grid
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp)
+                    ) {
+                        val w = size.width
+                        val h = size.height
+                        val gridColor = Color(0x33DC2626) // Traditional cinnabar red watermark
+                        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f), 0f)
+
+                        // Outer border
+                        drawRect(
+                            color = gridColor,
+                            style = Stroke(width = 1.5f)
+                        )
+                        // Vertical center dashed line
+                        drawLine(
+                            color = gridColor,
+                            start = Offset(w / 2f, 0f),
+                            end = Offset(w / 2f, h),
+                            strokeWidth = 1.2f,
+                            pathEffect = dashEffect
+                        )
+                        // Horizontal center dashed line
+                        drawLine(
+                            color = gridColor,
+                            start = Offset(0f, h / 2f),
+                            end = Offset(w, h / 2f),
+                            strokeWidth = 1.2f,
+                            pathEffect = dashEffect
+                        )
+                    }
+
                     Text(
                         text = character.char,
                         style = MaterialTheme.typography.displayLarge.copy(
@@ -123,7 +163,7 @@ fun WordDetailSheet(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.VolumeUp,
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = "朗读发音",
                         modifier = Modifier.size(28.dp),
                         tint = Color.White
@@ -190,28 +230,55 @@ fun WordDetailSheet(
                 )
             }
 
-            // Section 2: Common Everyday Words (常见生活组词)
-            if (!character.examples.isNullOrBlank()) {
+            // Section 2: Common Everyday Words (常见生活组词 - 点击可单独发音)
+            val wordList = remember(character.examples) {
+                character.examples?.split("、", ",", "，", " ")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+            }
+            if (wordList.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
-                    text = "【常见生活组词】",
+                    text = "【常见生活组词】（点击词语听发音）",
                     style = MaterialTheme.typography.titleLarge,
                     color = SeniorDark
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
+                Spacer(modifier = Modifier.height(10.dp))
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SeniorBackground)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(
-                        text = character.examples.replace("、", "   •   "),
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = SeniorPrimary
-                        ),
-                        modifier = Modifier.padding(18.dp)
-                    )
+                    wordList.forEach { word ->
+                        ElevatedAssistChip(
+                            onClick = { onSpeakWord(word) },
+                            label = {
+                                Text(
+                                    text = word,
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SeniorDark
+                                    )
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                    contentDescription = "朗读 $word",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = SeniorPrimary
+                                )
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = AssistChipDefaults.elevatedAssistChipColors(
+                                containerColor = SeniorBackground
+                            ),
+                            elevation = AssistChipDefaults.elevatedAssistChipElevation(
+                                elevation = 2.dp,
+                                pressedElevation = 4.dp
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, SeniorBorder)
+                        )
+                    }
                 }
             }
 
