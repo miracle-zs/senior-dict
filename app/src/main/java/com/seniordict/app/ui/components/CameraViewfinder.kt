@@ -11,6 +11,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlashOff
@@ -55,6 +56,7 @@ fun CameraViewfinder(
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var focusIndicatorOffset by remember { mutableStateOf<Offset?>(null) }
+    var currentZoomRatio by remember { mutableStateOf(1.0f) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -200,6 +202,53 @@ fun CameraViewfinder(
                         color = if (isTorchOn) SeniorDark else Color.White
                     )
                 )
+            }
+        }
+
+        // Floating Zoom Controls (1x / 2x / 3x) positioned on the right
+        Surface(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 14.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xBB0F172A),
+            shadowElevation = 6.dp,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0x55FFFFFF))
+        ) {
+            Column(
+                modifier = Modifier.padding(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf(1.0f to "1x", 2.0f to "2x", 3.0f to "3x").forEach { (ratio, label) ->
+                    val isSelected = currentZoomRatio == ratio
+                    Surface(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                currentZoomRatio = ratio
+                                try {
+                                    cameraControl?.setZoomRatio(ratio)
+                                } catch (e: Exception) {
+                                    Log.e("CameraViewfinder", "Set zoom ratio failed", e)
+                                }
+                            },
+                        shape = CircleShape,
+                        color = if (isSelected) SeniorWarning else Color.Transparent
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = label,
+                                color = if (isSelected) SeniorDark else Color.White,
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
     }

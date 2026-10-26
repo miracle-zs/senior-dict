@@ -1,10 +1,13 @@
 package com.seniordict.app.ui.screen
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
@@ -103,6 +106,41 @@ fun MainScreen(viewModel: MainViewModel) {
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    var lastBackPressTime by remember { mutableStateOf(0L) }
+
+    // Intercept Back button to protect elderly users from accidental exit
+    BackHandler {
+        when {
+            uiState.isDetailSheetVisible -> {
+                viewModel.dismissDetailSheet()
+            }
+            uiState.isSplitDialogVisible -> {
+                viewModel.closeSplitDialog()
+            }
+            uiState.isHandwritingVisible -> {
+                viewModel.closeHandwriting()
+            }
+            uiState.isHistorySheetVisible -> {
+                viewModel.closeHistorySheet()
+            }
+            uiState.isSettingsDialogVisible -> {
+                viewModel.closeSettingsDialog()
+            }
+            uiState.isFrozen -> {
+                viewModel.unfreezeCamera()
+            }
+            else -> {
+                val now = System.currentTimeMillis()
+                if (now - lastBackPressTime < 2000L) {
+                    (context as? Activity)?.finish()
+                } else {
+                    lastBackPressTime = now
+                    Toast.makeText(context, "再按一次退出银发字典", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

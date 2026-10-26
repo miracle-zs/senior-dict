@@ -1,12 +1,16 @@
 package com.seniordict.app.engine.audio
 
 import android.content.Context
+import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.widget.Toast
 import com.seniordict.app.data.preferences.SeniorPreferences
 import java.util.Locale
 
@@ -98,7 +102,28 @@ class AudioSpeaker(
         speak(text)
     }
 
+    /**
+     * Detect if system media volume is muted or too low, and gently boost for seniors.
+     */
+    private fun ensureAdequateVolume() {
+        try {
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            if (maxVolume > 0 && (currentVolume == 0 || (currentVolume.toFloat() / maxVolume) < 0.25f)) {
+                val targetVolume = (maxVolume * 0.7f).toInt().coerceAtLeast(1)
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, AudioManager.FLAG_SHOW_UI)
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(context.applicationContext, "已为您调大朗读音量 🔊", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AudioSpeaker", "Volume adjustment failed", e)
+        }
+    }
+
     private fun speak(text: String) {
+        ensureAdequateVolume()
         if (!isInitialized || tts == null) {
             Log.w("AudioSpeaker", "TTS not ready yet")
             return
