@@ -26,13 +26,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seniordict.app.engine.ocr.OcrCharacter
 import com.seniordict.app.engine.ocr.OcrPageResult
-import com.seniordict.app.ui.theme.*
 import kotlin.math.roundToInt
 
 /**
  * High-contrast OCR highlight overlay with Touch Loupe Balloon (放大镜气泡).
- * Overcomes thick-finger occlusion for elderly users by showing a magnified preview
- * floating right above the finger as they touch or drag across characters.
+ * Uses exact ContentScale.Fit geometric projection to ensure pixel-perfect bounding boxes
+ * aligned with the camera image, with Non-Maximum Suppression to avoid overlapping clutter.
  */
 @Composable
 fun OcrOverlayCanvas(
@@ -106,48 +105,65 @@ fun OcrOverlayCanvas(
                 }
             }
     ) {
-        // Background canvas rendering bounding boxes
+        // Background canvas rendering bounding boxes with exact ContentScale.Fit geometric projection
         Canvas(modifier = Modifier.fillMaxSize()) {
             val viewWidth = size.width
             val viewHeight = size.height
-            val scaleX = viewWidth / ocrResult.imageWidth.toFloat()
-            val scaleY = viewHeight / ocrResult.imageHeight.toFloat()
+            val transform = ocrResult.getDisplayTransform(viewWidth, viewHeight)
 
             for (ch in ocrResult.characters) {
-                val left = ch.bounds.left * scaleX
-                val top = ch.bounds.top * scaleY
-                val width = ch.bounds.width() * scaleX
-                val height = ch.bounds.height() * scaleY
+                val left = transform.offsetX + ch.bounds.left * transform.scale
+                val top = transform.offsetY + ch.bounds.top * transform.scale
+                val width = ch.bounds.width() * transform.scale
+                val height = ch.bounds.height() * transform.scale
 
                 val isHovered = hoveredChar != null && hoveredChar!!.char == ch.char && hoveredChar!!.bounds == ch.bounds
                 val isSelected = selectedChar != null && selectedChar.char == ch.char && selectedChar.bounds == ch.bounds
-
                 val isHighlight = isHovered || isSelected
 
-                val fillColor = if (isHighlight) OcrBoxSelectedFill else OcrBoxFill
-                val borderColor = if (isHighlight) OcrBoxSelectedBorder else OcrBoxBorder
-                val strokeWidth = if (isHighlight) 4.5f else 2f
-
-                // Draw character highlight background
-                drawRoundRect(
-                    color = fillColor,
-                    topLeft = Offset(left, top),
-                    size = Size(width, height),
-                    cornerRadius = CornerRadius(6f, 6f)
-                )
-
-                // Draw character border
-                drawRoundRect(
-                    color = borderColor,
-                    topLeft = Offset(left, top),
-                    size = Size(width, height),
-                    cornerRadius = CornerRadius(6f, 6f),
-                    style = Stroke(width = strokeWidth)
-                )
+                if (isHighlight) {
+                    // Outer radiant halo for selected character
+                    drawRoundRect(
+                        color = Color(0x44F59E0B),
+                        topLeft = Offset(left - 3f, top - 3f),
+                        size = Size(width + 6f, height + 6f),
+                        cornerRadius = CornerRadius(8f, 8f)
+                    )
+                    // Fill background
+                    drawRoundRect(
+                        color = Color(0x60F59E0B),
+                        topLeft = Offset(left, top),
+                        size = Size(width, height),
+                        cornerRadius = CornerRadius(6f, 6f)
+                    )
+                    // Border stroke
+                    drawRoundRect(
+                        color = Color(0xFFF59E0B),
+                        topLeft = Offset(left, top),
+                        size = Size(width, height),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 4f)
+                    )
+                } else {
+                    // Gentle, clean non-selected outline
+                    drawRoundRect(
+                        color = Color(0x18F59E0B),
+                        topLeft = Offset(left, top),
+                        size = Size(width, height),
+                        cornerRadius = CornerRadius(6f, 6f)
+                    )
+                    drawRoundRect(
+                        color = Color(0x88F59E0B),
+                        topLeft = Offset(left, top),
+                        size = Size(width, height),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 2f)
+                    )
+                }
             }
         }
 
-        // Floating Loupe Balloon
+        // Floating Loupe Balloon positioned dynamically above the elderly user's finger
         if (isLoupeActive && hoveredChar != null && touchOffset != null) {
             LoupeBalloon(
                 character = hoveredChar!!.char,

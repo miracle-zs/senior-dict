@@ -14,6 +14,14 @@ data class OcrLine(
     val characters: List<OcrCharacter>
 )
 
+data class DisplayTransform(
+    val scale: Float,
+    val offsetX: Float,
+    val offsetY: Float,
+    val displayedWidth: Float,
+    val displayedHeight: Float
+)
+
 data class OcrPageResult(
     val characters: List<OcrCharacter>,
     val lines: List<OcrLine>,
@@ -21,39 +29,54 @@ data class OcrPageResult(
     val imageHeight: Int
 ) {
     /**
+     * Calculate exact ContentScale.Fit geometric transformation for mapping
+     * between image pixel coordinates and screen view coordinates.
+     */
+    fun getDisplayTransform(viewWidth: Float, viewHeight: Float): DisplayTransform {
+        if (imageWidth <= 0 || imageHeight <= 0 || viewWidth <= 0f || viewHeight <= 0f) {
+            return DisplayTransform(1f, 0f, 0f, viewWidth, viewHeight)
+        }
+        val scale = minOf(viewWidth / imageWidth.toFloat(), viewHeight / imageHeight.toFloat())
+        val dw = imageWidth * scale
+        val dh = imageHeight * scale
+        val ox = (viewWidth - dw) / 2f
+        val oy = (viewHeight - dh) / 2f
+        return DisplayTransform(scale, ox, oy, dw, dh)
+    }
+
+    /**
      * Hit test: given a tap point (x, y) on the displayed view,
-     * find the closest matching character within touch threshold.
+     * find the closest matching character within touch threshold using exact
+     * ContentScale.Fit inverse transformation.
      */
     fun findCharacterAt(tapX: Float, tapY: Float, viewWidth: Float, viewHeight: Float): OcrCharacter? {
-        if (imageWidth <= 0 || imageHeight <= 0 || viewWidth <= 0 || viewHeight <= 0) return null
+        if (imageWidth <= 0 || imageHeight <= 0 || viewWidth <= 0 || viewHeight <= 0 || characters.isEmpty()) {
+            return null
+        }
 
-        val scaleX = viewWidth / imageWidth.toFloat()
-        val scaleY = viewHeight / imageHeight.toFloat()
-        
-        // Touch padding for senior fingers (50dp equivalent in px)
-        val touchPadding = 48f
+        val transform = getDisplayTransform(viewWidth, viewHeight)
+        // Convert touch point into image coordinates
+        val imgX = (tapX - transform.offsetX) / transform.scale
+        val imgY = (tapY - transform.offsetY) / transform.scale
+
+        // Touch padding for senior fingers in image coordinate space (approx 44dp)
+        val touchPadding = 48f / transform.scale
 
         var bestMatch: OcrCharacter? = null
         var minDistance = Float.MAX_VALUE
 
         for (ch in characters) {
-            val viewLeft = ch.bounds.left * scaleX
-            val viewTop = ch.bounds.top * scaleY
-            val viewRight = ch.bounds.right * scaleX
-            val viewBottom = ch.bounds.bottom * scaleY
-
             val paddedRect = RectF(
-                viewLeft - touchPadding,
-                viewTop - touchPadding,
-                viewRight + touchPadding,
-                viewBottom + touchPadding
+                ch.bounds.left - touchPadding,
+                ch.bounds.top - touchPadding,
+                ch.bounds.right + touchPadding,
+                ch.bounds.bottom + touchPadding
             )
 
-            if (paddedRect.contains(tapX, tapY)) {
-                // Calculate distance from tap point to center of character
-                val centerX = (viewLeft + viewRight) / 2f
-                val centerY = (viewTop + viewBottom) / 2f
-                val dist = (tapX - centerX) * (tapX - centerX) + (tapY - centerY) * (tapY - centerY)
+            if (paddedRect.contains(imgX, imgY)) {
+                val centerX = ch.bounds.centerX()
+                val centerY = ch.bounds.centerY()
+                val dist = (imgX - centerX) * (imgX - centerX) + (imgY - centerY) * (imgY - centerY)
                 if (dist < minDistance) {
                     minDistance = dist
                     bestMatch = ch

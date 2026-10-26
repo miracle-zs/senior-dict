@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -118,10 +120,10 @@ fun CameraScreen(
                                 shadowElevation = 6.dp
                             ) {
                                 Text(
-                                    text = "👆 请轻点屏幕上的黄色字块听发音",
+                                    text = "👆 轻点画面黄框，或点下方大字听发音",
                                     color = Color.White,
                                     style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontSize = 18.sp,
+                                        fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold
                                     ),
                                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
@@ -237,35 +239,122 @@ fun CameraScreen(
             }
         }
 
-        // 3. 底部控制栏 (重拍 或 三点式拍照控制)
-        Box(
+        // 3. 底部控制栏 (已识别大字列表 + 重拍 或 三点式拍照控制)
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp, start = 24.dp, end = 24.dp),
-            contentAlignment = Alignment.Center
+                .padding(bottom = 28.dp, start = 16.dp, end = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (uiState.isFrozen) {
+                val characters = uiState.ocrResult?.characters ?: emptyList()
+                if (!uiState.isLoading && characters.isNotEmpty() && !uiState.isDetailSheetVisible) {
+                    // 已识别大字快捷点读卡片栏 (不用费劲点画面上的小框)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color(0xF21E293B), // High contrast deep slate
+                        shadowElevation = 10.dp,
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0x66F59E0B))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "📖 识别到的汉字",
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "点大字直接听解释",
+                                        color = Color(0xFFCBD5E1),
+                                        fontSize = 13.sp
+                                    )
+                                }
+                                Text(
+                                    text = "共${characters.size}字",
+                                    color = Color(0xFFF59E0B),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(horizontal = 2.dp, vertical = 2.dp)
+                            ) {
+                                items(characters) { ch ->
+                                    val isSelected = uiState.selectedOcrChar?.let {
+                                        it.char == ch.char && it.bounds == ch.bounds
+                                    } ?: false
+
+                                    Surface(
+                                        modifier = Modifier
+                                            .size(width = 54.dp, height = 60.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .clickable { viewModel.onCharacterTapped(ch) },
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = if (isSelected) Color(0xFFF59E0B) else Color(0xFF334155),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            width = if (isSelected) 2.5.dp else 1.dp,
+                                            color = if (isSelected) Color.White else Color(0x77F59E0B)
+                                        ),
+                                        shadowElevation = if (isSelected) 6.dp else 2.dp
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = ch.char,
+                                                style = MaterialTheme.typography.headlineMedium.copy(
+                                                    fontSize = 28.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = if (isSelected) Color(0xFF0F172A) else Color.White
+                                                ),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // "重新拍照" 大按钮
                 Button(
                     onClick = { viewModel.unfreezeCamera() },
                     modifier = Modifier
-                        .height(64.dp)
-                        .padding(horizontal = 24.dp),
-                    shape = RoundedCornerShape(32.dp),
+                        .fillMaxWidth(0.65f)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SeniorSurface)
                 ) {
                     Icon(
                         Icons.Default.Refresh,
                         contentDescription = "重拍",
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(26.dp),
                         tint = SeniorDark
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "重新拍照",
                         style = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
                             color = SeniorDark
                         )
                     )

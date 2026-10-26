@@ -16,6 +16,7 @@ import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -105,8 +106,7 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
         val root = JSONObject(jsonStr)
         val items = root.optJSONArray("items") ?: return OcrPageResult(emptyList(), emptyList(), imgWidth, imgHeight)
 
-        val lines = mutableListOf<OcrLine>()
-        val characters = mutableListOf<OcrCharacter>()
+        val rawCharacters = mutableListOf<OcrCharacter>()
 
         for (i in 0 until items.length()) {
             val item = items.getJSONObject(i)
@@ -114,7 +114,8 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
             val score = item.optDouble("score", 1.0).toFloat()
             val box = item.optJSONArray("box")
 
-            if (text.isEmpty() || box == null || box.length() < 4) continue
+            // Filter out low confidence detections (< 0.50) to prevent hallucinated garbage characters
+            if (text.isEmpty() || score < 0.50f || box == null || box.length() < 4) continue
 
             // Parse normalized coordinates [0.0 ~ 1.0]
             var minX = Float.MAX_VALUE
@@ -134,7 +135,10 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
                 maxY = max(maxY, py)
             }
 
-            // Apply 10% ROI Padding to protect complex radicals (草字头、走之底)
+            // Filter out tiny noise boxes (e.g. dust, camera artifacts < 14px)
+            if ((maxX - minX) < 14f || (maxY - minY) < 14f) continue
+
+            // Apply 5% ROI Padding to protect complex radicals (草字头、走之底)
             val padX = (maxX - minX) * 0.05f
             val padY = (maxY - minY) * 0.08f
             val lineBounds = RectF(
@@ -146,11 +150,16 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
 
             // Segment line into individual square Chinese characters
             val charList = segmentLineToCharacters(text, lineBounds, score)
-            lines.add(OcrLine(text = text, bounds = lineBounds, characters = charList))
-            characters.addAll(charList)
+            rawCharacters.addAll(charList)
         }
 
-        return OcrPageResult(characters = characters, lines = lines, imageWidth = imgWidth, imageHeight = imgHeight)
+        // Apply strict NMS and deduplication to eliminate overlapping yellow boxes
+        val finalCharacters = applyNmsAndDeduplication(rawCharacters)
+
+        // Construct clean non-overlapping lines
+        val lines = buildLinesFromCharacters(finalCharacters)
+
+        return OcrPageResult(characters = finalCharacters, lines = lines, imageWidth = imgWidth, imageHeight = imgHeight)
     }
 
     /**
@@ -177,6 +186,128 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
             }
         }
         return results
+    }
+
+    /**
+     * Strict Non-Maximum Suppression (NMS) to eliminate overlapping bounding boxes
+     * and sort characters in natural top-to-bottom, left-to-right reading order.
+     */
+    private fun applyNmsAndDeduplication(characters: List<OcrCharacter>): List<OcrCharacter> {
+        if (characters.size <= 1) return characters
+
+        // 1. Sort by confidence descending
+        val sorted = characters.sortedByDescending { it.confidence }
+        val kept = mutableListOf<OcrCharacter>()
+
+        for (candidate in sorted) {
+            var overlaps = false
+            for (selected in kept) {
+                val iou = calculateIoU(candidate.bounds, selected.bounds)
+                val overlapRatio = calculateOverlapRatio(candidate.bounds, selected.bounds)
+                // Suppress if IoU > 0.30 or if one box contains > 50% of another
+                if (iou > 0.30f || overlapRatio > 0.50f) {
+                    overlaps = true
+                    break
+                }
+            }
+            if (!overlaps) {
+                kept.add(candidate)
+            }
+        }
+
+        // 2. Sort kept characters by natural reading order
+        return sortInReadingOrder(kept)
+    }
+
+    private fun calculateIoU(a: RectF, b: RectF): Float {
+        val interLeft = max(a.left, b.left)
+        val interTop = max(a.top, b.top)
+        val interRight = min(a.right, b.right)
+        val interBottom = min(a.bottom, b.bottom)
+
+        if (interRight <= interLeft || interBottom <= interTop) return 0f
+
+        val interArea = (interRight - interLeft) * (interBottom - interTop)
+        val areaA = a.width() * a.height()
+        val areaB = b.width() * b.height()
+        val unionArea = areaA + areaB - interArea
+        return if (unionArea > 0f) interArea / unionArea else 0f
+    }
+
+    private fun calculateOverlapRatio(a: RectF, b: RectF): Float {
+        val interLeft = max(a.left, b.left)
+        val interTop = max(a.top, b.top)
+        val interRight = min(a.right, b.right)
+        val interBottom = min(a.bottom, b.bottom)
+
+        if (interRight <= interLeft || interBottom <= interTop) return 0f
+
+        val interArea = (interRight - interLeft) * (interBottom - interTop)
+        val minArea = min(a.width() * a.height(), b.width() * b.height())
+        return if (minArea > 0f) interArea / minArea else 0f
+    }
+
+    private fun sortInReadingOrder(chars: List<OcrCharacter>): List<OcrCharacter> {
+        if (chars.size <= 1) return chars
+        val avgHeight = chars.map { it.bounds.height() }.average().toFloat().coerceAtLeast(12f)
+        val lineThreshold = avgHeight * 0.65f
+
+        val sortedByY = chars.sortedBy { it.bounds.centerY() }
+        val lines = mutableListOf<MutableList<OcrCharacter>>()
+
+        for (c in sortedByY) {
+            val matchingLine = lines.find { l ->
+                val lineCenterY = l.map { it.bounds.centerY() }.average().toFloat()
+                abs(c.bounds.centerY() - lineCenterY) < lineThreshold
+            }
+            if (matchingLine != null) {
+                matchingLine.add(c)
+            } else {
+                lines.add(mutableListOf(c))
+            }
+        }
+
+        // Sort lines from top to bottom
+        lines.sortBy { line -> line.map { it.bounds.top }.minOrNull() ?: 0f }
+        val result = mutableListOf<OcrCharacter>()
+        for (line in lines) {
+            // Sort characters within a line from left to right
+            line.sortBy { it.bounds.left }
+            result.addAll(line)
+        }
+        return result
+    }
+
+    private fun buildLinesFromCharacters(chars: List<OcrCharacter>): List<OcrLine> {
+        if (chars.isEmpty()) return emptyList()
+        val avgHeight = chars.map { it.bounds.height() }.average().toFloat().coerceAtLeast(12f)
+        val lineThreshold = avgHeight * 0.65f
+        val lineGroups = mutableListOf<MutableList<OcrCharacter>>()
+
+        for (c in chars) {
+            val matching = lineGroups.find { l ->
+                val lineCenterY = l.map { it.bounds.centerY() }.average().toFloat()
+                abs(c.bounds.centerY() - lineCenterY) < lineThreshold
+            }
+            if (matching != null) {
+                matching.add(c)
+            } else {
+                lineGroups.add(mutableListOf(c))
+            }
+        }
+
+        val lines = mutableListOf<OcrLine>()
+        for (group in lineGroups) {
+            group.sortBy { it.bounds.left }
+            val text = group.joinToString("") { it.char }
+            val minX = group.map { it.bounds.left }.minOrNull() ?: 0f
+            val minY = group.map { it.bounds.top }.minOrNull() ?: 0f
+            val maxX = group.map { it.bounds.right }.maxOrNull() ?: 0f
+            val maxY = group.map { it.bounds.bottom }.maxOrNull() ?: 0f
+            lines.add(OcrLine(text, RectF(minX, minY, maxX, maxY), group))
+        }
+        lines.sortBy { it.bounds.top }
+        return lines
     }
 
     private fun ensureInitialized() {
@@ -206,17 +337,22 @@ class PpOcrEngine(private val context: Context) : AutoCloseable {
         }
     }
 
-    private fun warmUp() {
-        if (nativeHandle != 0L) {
-            val start = SystemClock.elapsedRealtime()
-            NativeOcr.nativeWarmUp(nativeHandle)
-            Log.i("PpOcrEngine", "Native warmup finished in ${SystemClock.elapsedRealtime() - start}ms")
-        }
-    }
-
     private fun materializeAsset(assetPath: String): File {
         val destFile = File(modelDirectory, assetPath.replace('/', '_'))
-        if (!destFile.exists() || destFile.length() == 0L) {
+        val isConfig = assetPath.endsWith(".txt")
+        var shouldCopy = !destFile.exists() || destFile.length() == 0L || isConfig
+        if (!shouldCopy) {
+            try {
+                context.assets.open(assetPath).use { stream ->
+                    val len = stream.available().toLong()
+                    if (len > 0 && destFile.length() != len) {
+                        shouldCopy = true
+                    }
+                }
+            } catch (ignored: Exception) {}
+        }
+
+        if (shouldCopy) {
             Log.i("PpOcrEngine", "Extracting asset $assetPath to ${destFile.absolutePath}...")
             context.assets.open(assetPath).use { input ->
                 FileOutputStream(destFile).use { output ->
