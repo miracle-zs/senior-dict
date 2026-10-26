@@ -5,16 +5,20 @@ import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
@@ -24,7 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asComposePath
@@ -37,7 +41,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.seniordict.app.data.db.CharacterEntity
 import com.seniordict.app.ui.theme.*
-
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,8 +51,7 @@ fun HandwritingCanvasDialog(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val paths = remember { mutableStateListOf<Path>() }
-    var currentPath by remember { mutableStateOf<Path?>(null) }
-    var redrawKey by remember { mutableStateOf(0) }
+    var drawTick by remember { mutableLongStateOf(0L) }
 
     var candidates by remember { mutableStateOf<List<CharacterEntity>>(emptyList()) }
     var isRecognizing by remember { mutableStateOf(false) }
@@ -64,7 +66,8 @@ fun HandwritingCanvasDialog(
                 .fillMaxWidth(0.96f)
                 .fillMaxHeight(0.92f),
             shape = RoundedCornerShape(24.dp),
-            color = SeniorSurface
+            color = SeniorSurface,
+            shadowElevation = 10.dp
         ) {
             Column(
                 modifier = Modifier
@@ -77,80 +80,128 @@ fun HandwritingCanvasDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "大字手写板",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = SeniorDark
+                    Column {
+                        Text(
+                            text = "田字格大字手写",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JadeDeep
+                            )
                         )
-                    )
+                        Text(
+                            text = "一笔一划写大字·随写随查",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 13.sp,
+                                color = SeniorTextMuted
+                            )
+                        )
+                    }
                     IconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(48.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭", modifier = Modifier.size(28.dp))
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "关闭",
+                            modifier = Modifier.size(28.dp),
+                            tint = SeniorDark
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Canvas Box
+                // Tianzige / Mizige Canvas Box
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(18.dp))
                         .background(SeniorBackground)
-                        .border(3.dp, SeniorBorder, RoundedCornerShape(16.dp))
-                        .pointerInput(redrawKey) {
-                            detectDragGestures(
-                                onDragStart = { offset ->
-                                    val p = Path().apply { moveTo(offset.x, offset.y) }
-                                    currentPath = p
-                                    paths.add(p)
-                                },
-                                onDrag = { change, _ ->
-                                    currentPath?.lineTo(change.position.x, change.position.y)
-                                    redrawKey++
-                                },
-                                onDragEnd = {
-                                    currentPath = null
+                        .border(2.5.dp, JadePrimary.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
+                                down.consume()
+                                val path = Path().apply {
+                                    moveTo(down.position.x, down.position.y)
+                                    // Tiny line so a pure touch tap renders as a round dot
+                                    lineTo(down.position.x + 0.5f, down.position.y + 0.5f)
                                 }
-                            )
+                                paths.add(path)
+                                drawTick++
+
+                                val pointerId = down.id
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+                                    if (!change.pressed) {
+                                        break
+                                    }
+                                    change.consume()
+                                    path.lineTo(change.position.x, change.position.y)
+                                    drawTick++
+                                }
+                            }
                         }
                 ) {
-                    // Tianzige (田字格) background guides
+                    // Traditional Rice/Field Grid (米字格) Guides
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val w = size.width
                         val h = size.height
-                        // Dotted cross lines
+                        val guideColor = CinnabarRed.copy(alpha = 0.22f)
+                        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), 0f)
+
+                        // Center Horizontal line
                         drawLine(
-                            color = Color(0xFFCBD5E1),
-                            start = Offset(w / 2f, 0f),
-                            end = Offset(w / 2f, h),
-                            strokeWidth = 2f
-                        )
-                        drawLine(
-                            color = Color(0xFFCBD5E1),
+                            color = guideColor,
                             start = Offset(0f, h / 2f),
                             end = Offset(w, h / 2f),
-                            strokeWidth = 2f
+                            strokeWidth = 2f,
+                            pathEffect = dashEffect
+                        )
+                        // Center Vertical line
+                        drawLine(
+                            color = guideColor,
+                            start = Offset(w / 2f, 0f),
+                            end = Offset(w / 2f, h),
+                            strokeWidth = 2f,
+                            pathEffect = dashEffect
+                        )
+                        // Diagonal 1: Top-Left to Bottom-Right
+                        drawLine(
+                            color = guideColor.copy(alpha = 0.15f),
+                            start = Offset(0f, 0f),
+                            end = Offset(w, h),
+                            strokeWidth = 1.5f,
+                            pathEffect = dashEffect
+                        )
+                        // Diagonal 2: Bottom-Left to Top-Right
+                        drawLine(
+                            color = guideColor.copy(alpha = 0.15f),
+                            start = Offset(0f, h),
+                            end = Offset(w, 0f),
+                            strokeWidth = 1.5f,
+                            pathEffect = dashEffect
                         )
                     }
 
-                    // Stroke Rendering
+                    // User Stroke Rendering
                     Canvas(modifier = Modifier.fillMaxSize()) {
-                        for (p in paths) {
-                            drawPath(
-                                path = p.asComposePath(),
-                                color = SeniorDark,
-                                style = Stroke(
-                                    width = 18f,
-                                    cap = StrokeCap.Round,
-                                    join = StrokeJoin.Round
+                        // Observing drawTick schedules canvas repaint on every touch drag event
+                        if (drawTick >= 0) {
+                            for (p in paths) {
+                                drawPath(
+                                    path = p.asComposePath(),
+                                    color = SeniorDark,
+                                    style = Stroke(
+                                        width = 20f,
+                                        cap = StrokeCap.Round,
+                                        join = StrokeJoin.Round
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
 
@@ -158,10 +209,11 @@ fun HandwritingCanvasDialog(
                         Text(
                             text = "请在此用手指写字\n字迹尽量写大、居中",
                             style = MaterialTheme.typography.bodyLarge.copy(
-                                color = SeniorTextMuted,
-                                fontSize = 20.sp,
+                                color = SeniorTextMuted.copy(alpha = 0.8f),
+                                fontSize = 21.sp,
+                                fontWeight = FontWeight.Medium,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                lineHeight = 30.sp
+                                lineHeight = 32.sp
                             ),
                             modifier = Modifier.align(Alignment.Center)
                         )
@@ -174,11 +226,11 @@ fun HandwritingCanvasDialog(
                 if (candidates.isNotEmpty()) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "👆 请轻点您写的字：",
+                            text = "👆 请轻点您要查的字：",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = SeniorPrimary
+                                color = JadePrimary
                             )
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -189,14 +241,14 @@ fun HandwritingCanvasDialog(
                             items(candidates) { entity ->
                                 Surface(
                                     modifier = Modifier
-                                        .width(74.dp)
-                                        .height(84.dp)
+                                        .width(76.dp)
+                                        .height(86.dp)
                                         .clip(RoundedCornerShape(14.dp))
-                                        .border(2.5.dp, SeniorPrimary, RoundedCornerShape(14.dp))
+                                        .border(2.5.dp, JadePrimary, RoundedCornerShape(14.dp))
                                         .clickable {
                                             onSelectChar(entity)
                                         },
-                                    color = SeniorPrimary.copy(alpha = 0.08f)
+                                    color = JadeLight.copy(alpha = 0.35f)
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -206,11 +258,11 @@ fun HandwritingCanvasDialog(
                                         verticalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            text = entity.pinyin,
+                                            text = entity.pinyin.ifEmpty { "拼音" },
                                             style = MaterialTheme.typography.labelMedium.copy(
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = SeniorPrimary
+                                                color = JadePrimary
                                             ),
                                             maxLines = 1
                                         )
@@ -218,9 +270,9 @@ fun HandwritingCanvasDialog(
                                         Text(
                                             text = entity.char,
                                             style = MaterialTheme.typography.headlineLarge.copy(
-                                                fontSize = 34.sp,
+                                                fontSize = 36.sp,
                                                 fontWeight = FontWeight.ExtraBold,
-                                                color = SeniorDark
+                                                color = JadeDeep
                                             )
                                         )
                                     }
@@ -231,39 +283,80 @@ fun HandwritingCanvasDialog(
                     Spacer(modifier = Modifier.height(12.dp))
                 } else if (hasRecognizedOnce && !isRecognizing) {
                     Text(
-                        text = "未识别出清晰汉字，请写大、写清楚一点再试哦",
+                        text = "未能清晰辨识，请尝试把字写大、写清楚一点再试哦",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 16.sp
+                            color = WarmAmber,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
                         ),
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Action Bar: Clear & Search
+                // Action Bar: Undo, Clear & Recognize
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Undo last stroke
+                    OutlinedButton(
+                        onClick = {
+                            if (paths.isNotEmpty()) {
+                                paths.removeAt(paths.lastIndex)
+                                drawTick++
+                                candidates = emptyList()
+                                hasRecognizedOnce = false
+                            }
+                        },
+                        enabled = paths.isNotEmpty() && !isRecognizing,
+                        modifier = Modifier
+                            .weight(0.9f)
+                            .height(58.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(2.dp, if (paths.isNotEmpty()) SeniorBorder else SeniorBorder.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Undo,
+                            contentDescription = "撤销一笔",
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "撤销",
+                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                        )
+                    }
+
+                    // Clear all
                     OutlinedButton(
                         onClick = {
                             paths.clear()
-                            currentPath = null
+                            drawTick++
                             candidates = emptyList()
                             hasRecognizedOnce = false
-                            redrawKey++
                         },
+                        enabled = paths.isNotEmpty() && !isRecognizing,
                         modifier = Modifier
-                            .weight(1f)
-                            .height(60.dp),
+                            .weight(0.9f)
+                            .height(58.dp),
                         shape = RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(2.dp, SeniorBorder)
+                        border = BorderStroke(2.dp, if (paths.isNotEmpty()) SeniorBorder else SeniorBorder.copy(alpha = 0.5f))
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "重写", modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "重写", style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp))
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "重写",
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "重写",
+                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                        )
                     }
 
+                    // Recognize button
                     Button(
                         onClick = {
                             if (paths.isEmpty() || isRecognizing) return@Button
@@ -284,23 +377,36 @@ fun HandwritingCanvasDialog(
                         },
                         enabled = paths.isNotEmpty() && !isRecognizing,
                         modifier = Modifier
-                            .weight(1.3f)
-                            .height(60.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SeniorPrimary),
+                            .weight(1.5f)
+                            .height(58.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = JadePrimary,
+                            disabledContainerColor = JadePrimary.copy(alpha = 0.35f)
+                        ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         if (isRecognizing) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
-                                color = Color.White,
+                                color = androidx.compose.ui.graphics.Color.White,
                                 strokeWidth = 3.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "识别中...", style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp))
+                            Text(
+                                text = "识别中...",
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            )
                         } else {
-                            Icon(Icons.Default.Search, contentDescription = "识别", modifier = Modifier.size(24.dp))
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "识别查字",
+                                modifier = Modifier.size(24.dp)
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "识别查字", style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp))
+                            Text(
+                                text = "识别查字",
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }
@@ -309,20 +415,65 @@ fun HandwritingCanvasDialog(
     }
 }
 
-private fun rasterizeCanvas(paths: List<Path>, width: Int = 360, height: Int = 360): Bitmap {
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+/**
+ * Intelligent handwriting rasterizer:
+ * Centers and scales the drawn strokes with an optimal ~18% white margin into a 480x480 square bitmap.
+ * This guarantees the character is fully visible, well-proportioned, and ideal for PP-OCRv6 DBNet & CRNN recognition.
+ */
+@Suppress("DEPRECATION")
+private fun rasterizeCanvas(paths: List<Path>, targetSize: Int = 480): Bitmap {
+    val bitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
     val canvas = AndroidCanvas(bitmap)
     canvas.drawColor(AndroidColor.WHITE)
+
+    if (paths.isEmpty()) return bitmap
+
+    val totalPath = Path()
+    for (p in paths) {
+        totalPath.addPath(p)
+    }
+
+    val bounds = RectF()
+    totalPath.computeBounds(bounds, true)
+
+    val bw = bounds.width()
+    val bh = bounds.height()
+
     val paint = Paint().apply {
         color = AndroidColor.BLACK
         style = Paint.Style.STROKE
-        strokeWidth = 24f
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
         isAntiAlias = true
     }
+
+    if (bw <= 0.01f || bh <= 0.01f) {
+        paint.strokeWidth = 22f
+        for (p in paths) {
+            canvas.drawPath(p, paint)
+        }
+        return bitmap
+    }
+
+    // Leave a clean ~18% white margin around the character
+    val padding = targetSize * 0.18f
+    val availSize = targetSize - 2 * padding
+    val maxDim = maxOf(bw, bh)
+    val scale = (availSize / maxDim).coerceAtMost(3.0f)
+
+    // Ensure strokes maintain an ideal ~22px thickness on target bitmap
+    paint.strokeWidth = (22f / scale).coerceIn(12f, 32f)
+
+    canvas.save()
+    // Center the character inside the target square bitmap
+    canvas.translate(targetSize / 2f, targetSize / 2f)
+    canvas.scale(scale, scale)
+    canvas.translate(-bounds.centerX(), -bounds.centerY())
+
     for (p in paths) {
         canvas.drawPath(p, paint)
     }
+    canvas.restore()
+
     return bitmap
 }

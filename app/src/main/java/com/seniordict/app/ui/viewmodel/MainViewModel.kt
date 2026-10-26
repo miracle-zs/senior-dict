@@ -202,14 +202,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     suspend fun recognizeHandwriting(bitmap: Bitmap): List<CharacterEntity> {
         val ocrResult = ocrEngine.processImage(bitmap)
-        val candidateChars = ocrResult.characters.map { it.char }.distinct()
+        val candidateChars = if (ocrResult.characters.isNotEmpty()) {
+            ocrResult.characters.map { it.char }
+        } else {
+            ocrResult.lines.flatMap { it.text.map { c -> c.toString() } }.filter { it.isNotBlank() }
+        }.distinct()
+
         val entities = mutableListOf<CharacterEntity>()
 
         for (c in candidateChars) {
-            val e = repository.lookupCharacter(c)
-            if (e != null) {
-                entities.add(e)
-            }
+            val e = repository.lookupCharacter(c) ?: CharacterEntity(
+                char = c,
+                pinyin = "",
+                pinyinRaw = "",
+                audioKey = "",
+                radicals = "部首",
+                strokeCount = 0,
+                definition = "生僻或未收录汉字",
+                examples = null
+            )
+            entities.add(e)
         }
         return entities
     }
