@@ -137,9 +137,11 @@ fun HandwritingCanvasDialog(
                             awaitEachGesture {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 down.consume()
+                                var prevX = down.position.x
+                                var prevY = down.position.y
                                 val path = Path().apply {
-                                    moveTo(down.position.x, down.position.y)
-                                    lineTo(down.position.x + 0.5f, down.position.y + 0.5f)
+                                    moveTo(prevX, prevY)
+                                    lineTo(prevX + 0.5f, prevY + 0.5f)
                                 }
                                 paths.add(path)
                                 drawTick++
@@ -149,11 +151,18 @@ fun HandwritingCanvasDialog(
                                     val event = awaitPointerEvent()
                                     val change = event.changes.firstOrNull { it.id == pointerId } ?: break
                                     if (!change.pressed) {
+                                        path.lineTo(prevX, prevY)
                                         lastStrokeTime = System.currentTimeMillis()
                                         break
                                     }
                                     change.consume()
-                                    path.lineTo(change.position.x, change.position.y)
+                                    val currentX = change.position.x
+                                    val currentY = change.position.y
+                                    val midX = (prevX + currentX) / 2f
+                                    val midY = (prevY + currentY) / 2f
+                                    path.quadTo(prevX, prevY, midX, midY)
+                                    prevX = currentX
+                                    prevY = currentY
                                     drawTick++
                                 }
                             }

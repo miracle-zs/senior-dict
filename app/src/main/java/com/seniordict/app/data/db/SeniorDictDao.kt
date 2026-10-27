@@ -30,6 +30,25 @@ interface SeniorDictDao {
     suspend fun getCharactersByPinyin(pinyinRaw: String): List<CharacterEntity>
 
     @Query("""
+        SELECT * FROM characters 
+        WHERE pinyin_raw LIKE :prefix || '%' 
+        ORDER BY (CASE WHEN pinyin_raw = :prefix THEN 0 ELSE 1 END), stroke_count ASC 
+        LIMIT 12
+    """)
+    suspend fun searchCharactersByPinyinPrefix(prefix: String): List<CharacterEntity>
+
+    @Query("""
+        SELECT * FROM characters 
+        WHERE char LIKE :prefix || '%' OR radicals = :prefix
+        ORDER BY stroke_count ASC 
+        LIMIT 12
+    """)
+    suspend fun searchCharactersByCharOrRadical(prefix: String): List<CharacterEntity>
+
+    @Query("SELECT display_parts FROM char_components WHERE char = :character ORDER BY id DESC LIMIT 1")
+    suspend fun getCharComponentDisplay(character: String): String?
+
+    @Query("""
         SELECT c.* FROM characters c
         INNER JOIN char_components cc ON c.char = cc.char
         WHERE cc.parts = :parts

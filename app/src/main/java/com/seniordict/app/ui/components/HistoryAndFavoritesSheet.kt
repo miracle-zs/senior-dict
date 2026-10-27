@@ -32,6 +32,8 @@ import com.seniordict.app.ui.theme.*
 fun HistoryAndFavoritesSheet(
     favorites: List<FavoriteItem>,
     history: List<HistoryItem>,
+    isContinuousReading: Boolean = false,
+    onToggleContinuousReading: () -> Unit = {},
     onSelectChar: (String) -> Unit,
     onSpeakChar: (String, String?, String?) -> Unit,
     onDeleteFavorite: (String) -> Unit,
@@ -163,6 +165,45 @@ fun HistoryAndFavoritesSheet(
                         )
                     }
                 } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "已收藏 ${favorites.size} 个生字",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = SeniorTextMuted
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isContinuousReading) WarmAmber else JadePrimary,
+                            modifier = Modifier.clickable { onToggleContinuousReading() }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = if (isContinuousReading) "停止朗读" else "顺序朗读全部",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()

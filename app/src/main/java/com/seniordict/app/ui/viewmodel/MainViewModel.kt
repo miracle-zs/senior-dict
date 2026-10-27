@@ -36,6 +36,7 @@ data class MainUiState(
     val ocrResult: OcrPageResult? = null,
     val selectedOcrChar: OcrCharacter? = null,
     val selectedEntity: CharacterEntity? = null,
+    val selectedCharStructure: String? = null,
     val isSelectedCharFavorite: Boolean = false,
     val isDetailSheetVisible: Boolean = false,
     val isSplitDialogVisible: Boolean = false,
@@ -44,6 +45,8 @@ data class MainUiState(
     val isSettingsDialogVisible: Boolean = false,
     val isTorchOn: Boolean = false,
     val splitCandidates: List<CharacterEntity> = emptyList(),
+    val searchSuggestions: List<CharacterEntity> = emptyList(),
+    val isContinuousReading: Boolean = false,
     val isLoading: Boolean = false,
     val toastMessage: String? = null,
     val currentCaptureSource: String = "CAMERA",
@@ -157,12 +160,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 examples = null
             )
 
+            val structure = repository.lookupComponentDisplay(entity.char)
             val isFav = repository.isFavorite(entity.char)
             repository.recordHistory(entity.char, _uiState.value.currentCaptureSource)
 
             _uiState.value = _uiState.value.copy(
                 selectedOcrChar = ocrChar,
                 selectedEntity = entity,
+                selectedCharStructure = structure,
                 isSelectedCharFavorite = isFav,
                 isDetailSheetVisible = true
             )
@@ -175,11 +180,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onDirectLookup(char: String, source: String = "MANUAL") {
         viewModelScope.launch {
             val entity = repository.lookupCharacter(char) ?: return@launch
+            val structure = repository.lookupComponentDisplay(entity.char)
             val isFav = repository.isFavorite(entity.char)
             repository.recordHistory(entity.char, source)
 
             _uiState.value = _uiState.value.copy(
                 selectedEntity = entity,
+                selectedCharStructure = structure,
                 isSelectedCharFavorite = isFav,
                 isDetailSheetVisible = true,
                 isSplitDialogVisible = false,
@@ -315,6 +322,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun closeHistorySheet() {
+        stopContinuousReading()
         _uiState.value = _uiState.value.copy(isHistorySheetVisible = false)
     }
 
@@ -340,8 +348,58 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(currentScreen = AppScreenMode.HOME)
     }
 
+    private var searchDebounceJob: kotlinx.coroutines.Job? = null
+    private var readingFavoritesJob: kotlinx.coroutines.Job? = null
+
     fun onSearchQueryChanged(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
+        searchDebounceJob?.cancel()
+        if (query.isBlank()) {
+            _uiState.value = _uiState.value.copy(searchSuggestions = emptyList())
+            return
+        }
+        searchDebounceJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(180)
+            val suggestions = repository.searchLiveSuggestions(query)
+            _uiState.value = _uiState.value.copy(searchSuggestions = suggestions)
+        }
+    }
+
+    fun speakAllScannedText() {
+        val chars = _uiState.value.ocrResult?.characters?.map { it.char } ?: emptyList()
+        if (chars.isNotEmpty()) {
+            val text = chars.joinToString("")
+            audioSpeaker.speakText(text)
+        }
+    }
+
+    fun toggleContinuousReadingFavorites(favoritesList: List<FavoriteItem>) {
+        if (readingFavoritesJob?.isActive == true) {
+            readingFavoritesJob?.cancel()
+            audioSpeaker.stop()
+            _uiState.value = _uiState.value.copy(isContinuousReading = false)
+        } else {
+            if (favoritesList.isEmpty()) return
+            _uiState.value = _uiState.value.copy(isContinuousReading = true)
+            readingFavoritesJob = viewModelScope.launch {
+                try {
+                    for (item in favoritesList) {
+                        audioSpeaker.speakCharacter(item.char, item.pinyin ?: "", item.examples)
+                        kotlinx.coroutines.delay(2200)
+                    }
+                } finally {
+                    _uiState.value = _uiState.value.copy(isContinuousReading = false)
+                }
+            }
+        }
+    }
+
+    fun stopContinuousReading() {
+        if (readingFavoritesJob?.isActive == true) {
+            readingFavoritesJob?.cancel()
+            audioSpeaker.stop()
+            _uiState.value = _uiState.value.copy(isContinuousReading = false)
+        }
     }
 
     fun selectScannedCharacter(charStr: String) {

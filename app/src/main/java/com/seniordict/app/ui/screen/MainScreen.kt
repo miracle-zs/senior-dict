@@ -257,6 +257,7 @@ fun MainScreen(viewModel: MainViewModel) {
 
         WordDetailSheet(
             character = uiState.selectedEntity!!,
+            structure = uiState.selectedCharStructure,
             isFavorite = uiState.isSelectedCharFavorite,
             contextCharacters = contextChars,
             onSelectCharacter = { charStr -> viewModel.selectScannedCharacter(charStr) },
@@ -291,6 +292,8 @@ fun MainScreen(viewModel: MainViewModel) {
         HistoryAndFavoritesSheet(
             favorites = favorites,
             history = history,
+            isContinuousReading = uiState.isContinuousReading,
+            onToggleContinuousReading = { viewModel.toggleContinuousReadingFavorites(favorites) },
             onSelectChar = { char -> viewModel.onDirectLookup(char, "FAVORITES") },
             onSpeakChar = { char, pinyin, examples -> viewModel.speakCharacterByInfo(char, pinyin, examples) },
             onDeleteFavorite = { char -> viewModel.toggleFavorite(char) },

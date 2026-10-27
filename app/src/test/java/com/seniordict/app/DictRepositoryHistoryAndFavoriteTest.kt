@@ -94,4 +94,30 @@ class DictRepositoryHistoryAndFavoriteTest {
         repository.clearHistory()
         assertEquals(0, dao.getRecentHistory().size)
     }
+
+    @Test
+    fun `test lookupComponentDisplay returns character breakdown`() = runTest {
+        dao.displayPartsMap["柏"] = "木 + 白"
+        dao.displayPartsMap["药"] = "艹 + 约"
+
+        val partBai = repository.lookupComponentDisplay("柏")
+        assertEquals("木 + 白", partBai)
+
+        val partYao = repository.lookupComponentDisplay("药")
+        assertEquals("艹 + 约", partYao)
+
+        val partUnknown = repository.lookupComponentDisplay("未知")
+        assertNull(partUnknown)
+    }
+
+    @Test
+    fun `test searchLiveSuggestions matches pinyin prefix and radical`() = runTest {
+        val pinyinMatches = repository.searchLiveSuggestions("ba")
+        assertEquals(1, pinyinMatches.size)
+        assertEquals("柏", pinyinMatches[0].char)
+
+        val radicalMatches = repository.searchLiveSuggestions("艹")
+        assertEquals(1, radicalMatches.size)
+        assertEquals("药", radicalMatches[0].char)
+    }
 }

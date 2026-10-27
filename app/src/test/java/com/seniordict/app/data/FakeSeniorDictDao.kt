@@ -9,6 +9,7 @@ class FakeSeniorDictDao : SeniorDictDao {
 
     val charactersMap = mutableMapOf<String, CharacterEntity>()
     val componentsMap = mutableMapOf<String, MutableList<String>>() // parts -> list of chars
+    val displayPartsMap = mutableMapOf<String, String>()
     val historyList = mutableListOf<SearchHistoryEntity>()
     val favoritesSet = mutableSetOf<String>()
 
@@ -31,6 +32,18 @@ class FakeSeniorDictDao : SeniorDictDao {
 
     override suspend fun getCharactersByPinyin(pinyinRaw: String): List<CharacterEntity> {
         return charactersMap.values.filter { it.pinyinRaw.equals(pinyinRaw, ignoreCase = true) }
+    }
+
+    override suspend fun searchCharactersByPinyinPrefix(prefix: String): List<CharacterEntity> {
+        return charactersMap.values.filter { it.pinyinRaw.startsWith(prefix, ignoreCase = true) }
+    }
+
+    override suspend fun searchCharactersByCharOrRadical(prefix: String): List<CharacterEntity> {
+        return charactersMap.values.filter { it.char.startsWith(prefix) || it.radicals == prefix }
+    }
+
+    override suspend fun getCharComponentDisplay(character: String): String? {
+        return displayPartsMap[character]
     }
 
     override suspend fun getCharactersByParts(parts: String): List<CharacterEntity> {

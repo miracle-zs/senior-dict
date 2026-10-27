@@ -38,6 +38,7 @@ import com.seniordict.app.ui.theme.*
 @Composable
 fun WordDetailSheet(
     character: CharacterEntity,
+    structure: String? = null,
     isFavorite: Boolean = false,
     contextCharacters: List<String> = emptyList(),
     onSelectCharacter: (String) -> Unit = {},
@@ -166,12 +167,18 @@ fun WordDetailSheet(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         if (!character.radicals.isNullOrBlank()) {
                             BadgeChip(label = "部首: ${character.radicals}")
                         }
                         if (character.strokeCount > 0) {
                             BadgeChip(label = "${character.strokeCount} 画")
+                        }
+                        if (!structure.isNullOrBlank()) {
+                            BadgeChip(label = "拆解: $structure")
                         }
                     }
                 }

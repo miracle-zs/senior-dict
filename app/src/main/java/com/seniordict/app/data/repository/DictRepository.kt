@@ -55,6 +55,21 @@ class DictRepository(private val dao: SeniorDictDao) {
         dao.getCharacter(char.trim())
     }
 
+    suspend fun lookupComponentDisplay(char: String): String? = withContext(Dispatchers.IO) {
+        if (char.isBlank()) return@withContext null
+        dao.getCharComponentDisplay(char.trim())
+    }
+
+    suspend fun searchLiveSuggestions(query: String): List<CharacterEntity> = withContext(Dispatchers.IO) {
+        val q = query.trim().lowercase()
+        if (q.isBlank()) return@withContext emptyList()
+        if (q.all { it in 'a'..'z' }) {
+            dao.searchCharactersByPinyinPrefix(q)
+        } else {
+            dao.searchCharactersByCharOrRadical(q)
+        }
+    }
+
     suspend fun searchByPinyin(rawPinyin: String): List<CharacterEntity> = withContext(Dispatchers.IO) {
         if (rawPinyin.isBlank()) return@withContext emptyList()
         dao.getCharactersByPinyin(rawPinyin.trim().lowercase())

@@ -216,6 +216,74 @@ fun HomeScreen(
                 }
             }
 
+            // 1.5 即时搜索候选 (拼音或汉字前缀联想)
+            if (uiState.searchSuggestions.isNotEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "候选汉字 (轻触查字与发音)",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JadePrimary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(uiState.searchSuggestions) { entity ->
+                                Surface(
+                                    modifier = Modifier
+                                        .width(72.dp)
+                                        .height(82.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .border(1.5.dp, JadeLight, RoundedCornerShape(14.dp))
+                                        .clickable {
+                                            focusManager.clearFocus()
+                                            viewModel.onDirectLookup(entity.char, source = "SUGGESTION")
+                                        },
+                                    color = SeniorSurface,
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = entity.pinyin.ifEmpty { " " },
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = JadePrimary
+                                            ),
+                                            maxLines = 1
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = entity.char,
+                                            style = MaterialTheme.typography.headlineLarge.copy(
+                                                fontSize = 34.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = SeniorDark
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // 2. 核心主入口：拍照看字
             item {
                 Surface(
